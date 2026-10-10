@@ -10,10 +10,13 @@ import {
   deactivateAutomation,
   deleteAutomation,
   duplicateAutomation,
+  getAutomation,
+  saveAutomationGraph,
   updateAutomationDetails,
 } from "@/lib/server/services/automations";
 import { createAutomationFromTemplate } from "@/lib/server/services/templates";
 import { automationDetailsSchema, createAutomationSchema, idSchema } from "@/lib/validation/automation";
+import { z } from "zod";
 
 export async function createAutomationAction(slug: string, input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction("automation.create", async () => {
@@ -69,5 +72,27 @@ export async function setAutomationActiveAction(slug: string, id: string, active
     }
     refresh();
     return { ok: true, data: null, message };
+  });
+}
+
+export type SaveGraphResult = { revision: number; status: string; hasUnpublishedChanges: boolean; publishedVersion: number | null };
+
+/** Saves the builder's working graph (publishing is a separate, explicit action). */
+export async function saveAutomationGraphAction(
+  slug: string,
+  id: string,
+  graph: unknown,
+  revision: number,
+): Promise<ActionResult<SaveGraphResult>> {
+  return runAction("automation.saveGraph", async () => {
+    const ctx = await authorizeWorkspace(slug);
+    const automationId = idSchema.parse(id);
+    const newRevision = await saveAutomationGraph(ctx, automationId, graph, z.number().int().parse(revision));
+    const a = await getAutomation(ctx, automationId);
+    return {
+      ok: true,
+      data: { revision: newRevision, status: a.status, hasUnpublishedChanges: a.hasUnpublishedChanges, publishedVersion: a.published?.version ?? null },
+      message: "Changes saved",
+    };
   });
 }

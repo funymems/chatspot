@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Copy, ExternalLink, MoreHorizontal, Pause, Play, Trash2 } from "lucide-react";
+import { Copy, ExternalLink, MoreHorizontal, Pause, PencilRuler, Play, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -74,6 +74,11 @@ export function AutomationRowMenu({ slug, automation }: { slug: string; automati
           <DropdownMenuItem asChild>
             <Link href={`/w/${slug}/automations/${automation.id}`}>
               <ExternalLink aria-hidden /> Open
+            </Link>
+          </DropdownMenuItem>
+          <DropdownMenuItem asChild>
+            <Link href={`/w/${slug}/automations/${automation.id}/builder`}>
+              <PencilRuler aria-hidden /> Open builder
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => m.setActive(automation, !isLive)}>

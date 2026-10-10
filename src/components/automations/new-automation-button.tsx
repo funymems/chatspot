@@ -90,7 +90,7 @@ function CreateAutomationDialog({
       }
       toast.success(res.message);
       onClose();
-      router.push(`/w/${slug}/automations/${res.data.id}`);
+      router.push(`/w/${slug}/automations/${res.data.id}/builder`);
     });
   };
 

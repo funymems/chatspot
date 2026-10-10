@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { AlertTriangle, CheckCircle2, CircleAlert, GitCommitVertical, Info } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlertTriangle, CheckCircle2, CircleAlert, GitCommitVertical, Info, PencilRuler } from "lucide-react";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
+import { Card, CardAction, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageContainer, PageHeader } from "@/components/shell/page-header";
 import { AutomationStatusBadge, triggerLabels } from "@/components/automations/status-badge";
@@ -74,9 +76,15 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
           <Card>
             <CardHeader>
               <CardTitle>Flow</CardTitle>
+              <CardAction>
+                <Button asChild size="sm">
+                  <Link href={`/w/${slug}/automations/${a.id}/builder`}>
+                    <PencilRuler aria-hidden /> Open builder
+                  </Link>
+                </Button>
+              </CardAction>
               <CardDescription>
-                {a.graph.nodes.length} nodes · {a.graph.edges.length} connections. Visual editing arrives with the
-                builder in stage 4.
+                {a.graph.nodes.length} nodes · {a.graph.edges.length} connections
               </CardDescription>
             </CardHeader>
             <CardContent>

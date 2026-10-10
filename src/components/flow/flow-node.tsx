@@ -19,6 +19,14 @@ export type FlowNodeData = {
 };
 export type FlowNode = Node<FlowNodeData, NodeType>;
 
+const noteColors = {
+  yellow: "border-yellow-300 bg-yellow-50 text-yellow-950",
+  blue: "border-sky-300 bg-sky-50 text-sky-950",
+  green: "border-emerald-300 bg-emerald-50 text-emerald-950",
+  pink: "border-pink-300 bg-pink-50 text-pink-950",
+  gray: "border-zinc-300 bg-zinc-50 text-zinc-900",
+} as const;
+
 const handleClass = "!size-3 !border-2 !border-background !bg-muted-foreground/60";
 
 export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
@@ -28,13 +36,9 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
   const lines = describeNode(node);
 
   if (node.type === "note") {
+    const color = (node.data as { color?: keyof typeof noteColors }).color ?? "yellow";
     return (
-      <div
-        className={cn(
-          "w-56 rounded-lg border border-yellow-300 bg-yellow-50 p-3 text-xs text-yellow-950 shadow-sm",
-          selected && "ring-2 ring-primary",
-        )}
-      >
+      <div className={cn("w-56 rounded-lg border p-3 text-xs shadow-sm", noteColors[color] ?? noteColors.yellow, selected && "ring-2 ring-primary")}>
         <div className="mb-1 flex items-center gap-1.5 font-medium">
           <Icon className="size-3.5" aria-hidden /> {nodeDisplayName(node)}
         </div>

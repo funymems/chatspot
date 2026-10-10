@@ -297,3 +297,14 @@ export async function deactivateAutomation(ctx: WorkspaceContext, id: string) {
     entityId: id,
   });
 }
+
+/** Lightweight id/name list, e.g. for the "redirect to flow" picker. */
+export async function listAutomationOptions(ctx: WorkspaceContext, excludeId?: string) {
+  const db = await getDb();
+  const rows = await db
+    .select({ id: automations.id, name: automations.name })
+    .from(automations)
+    .where(eq(automations.workspaceId, ctx.workspaceId))
+    .orderBy(automations.name);
+  return rows.filter((r) => r.id !== excludeId);
+}

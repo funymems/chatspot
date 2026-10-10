@@ -182,3 +182,11 @@ Choice: **`claude-haiku-5-5`** through the official `@anthropic-ai/sdk`. It's at
 - Automations service: list with search and status filter plus run stats, create (scratch or template), edit details, optimistic-concurrency graph save, duplicate, delete, activate (validates, then publishes an immutable content-hashed version, reusing identical ones), deactivate. "Unpublished changes" is detected by hash.
 - UI: automations list (URL-backed search and filters, row menu, delete confirmation), create dialog (scratch / template / AI marked as stage 6), detail page (read-only React Flow preview, validation panel, details form, publishing info), dashboard with KPIs computed from the DB, performance, activity, conversations, quick actions, onboarding checklist.
 - Checks: 35 tests (graph validator, all templates, automation lifecycle, cross-workspace isolation, dashboard metrics), tsc, ESLint, verified in the browser.
+
+### Stage 4: done (2026-10-10)
+- Full-screen builder at `/w/[slug]/automations/[id]/builder`: node palette (click or drag), React Flow canvas (pan, zoom, fit, minimap, snap grid, smoothstep edges), right-hand config panel.
+- Config forms for all 7 node types. Field errors come from the shared validator, with variable chips for `{{…}}` templates and a live "would this sample trigger the flow?" preview using the shared `matchesTrigger` (the engine will reuse it).
+- Pure builder reducer (`components/builder/state.ts`): undo/redo with typing coalescing and one history step per drag. Graph ops: add, update, delete (with edges), duplicate (never the trigger), and connect, which replaces an existing edge from the same handle.
+- Save (button or Ctrl+S) with optimistic-concurrency revisions, plus "Activate" / "Publish changes" (save, then publish). Unsaved-changes guard. Hotkeys: undo/redo/duplicate/delete/escape. Live validation popover; clicking an issue centres its node.
+- Node cards show the START badge, error count and a run-status ring (used by the stage 5 test runner).
+- Checks: 47 tests (builder reducer, trigger matcher and the earlier suites), tsc, ESLint. Verified in the browser: edit, live validation, undo, add node, save, persists after reload, delete edge, reconnect by drag.
