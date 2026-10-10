@@ -212,3 +212,12 @@ Choice: **`claude-haiku-5-5`** through the official `@anthropic-ai/sdk`. It's at
 - AI flow generator: strict response schema (configs as JSON strings), Zod parsing, deterministic repair (types, ids, edges, one trigger, End on open outputs, layout), validation and one LLM repair round. The preview is shown before saving, the server re-validates on save, and drafts are never activated. The demo generator is rule-based and handles EN/RU patterns.
 - Checks: 89 tests, tsc, ESLint and `next build` pass. Verified in the browser: create an agent, add a Q&A, get a grounded answer with its source, get the fallback plus an unanswered entry, generate a flow, save the draft and open it in the builder.
 - Not verified against the real Gemini API: no key was available. The Gemini path is covered by a mocked-provider test.
+
+### Stage 7: done (2026-10-10)
+- Contacts CRM: search (name, email, phone), tag and status filters, four sort orders, pagination (all URL-backed), create dialog. The detail page has editable fields, tags, custom fields, interaction history, automation runs and a possible-duplicates card. Merging only happens on an explicit, confirmed action; it moves conversations, runs and tags, fills empty fields and hides the duplicate. Test contacts are hidden from the list.
+- Inbox: status filters with counts, search (including message bodies), demo-channel indicator.
+  - Composer modes: simulate a customer message (through the real live pipeline: dedupe, resume or trigger), reply as yourself (delivered as `simulated`), internal note.
+  - Assign to me, resolve and reopen (written as system events), AI suggestion preview (stored as `generated_reply`, sent only after explicit Send, editable, discardable). "Simulate a customer" starts a new conversation.
+- Templates gallery: category filter, flow preview dialog, "Use template" creates a draft and opens the builder.
+- Analytics: 7/30/90-day and all-time ranges plus a live/test filter. Total runs, successful, failed, completion rate, leads; conversions are labelled test/live goal-reached runs. Daily stacked status chart with a table view, most-triggered automations, node failures with the last error, execution history.
+- Checks: 97 tests, tsc, ESLint and `next build` pass. Verified in the browser: simulated customer → COURSE automation → reply resumes the run → link sent → contact created with a tag, and analytics shows the runs.
