@@ -14,6 +14,8 @@ export default defineConfig({
     environment: "node",
     include: ["src/**/*.test.ts", "tests/**/*.test.ts"],
     testTimeout: 30_000,
-    hookTimeout: 60_000,
+    hookTimeout: 120_000,
+    // Each file boots its own embedded Postgres (WASM); too many at once starves the CPU.
+    maxWorkers: 4,
   },
 });

@@ -1,4 +1,5 @@
 import "server-only";
+import { queryRows } from "@/lib/server/db/rows";
 import { eq, sql } from "drizzle-orm";
 import { getDb, type Executor } from "@/lib/server/db/client";
 import { scheduledJobs } from "@/lib/server/db/schema";
@@ -54,7 +55,7 @@ const STALE_LOCK = "5 minutes";
  */
 export async function claimDueJobs(now: Date, limit = 20): Promise<JobRow[]> {
   const db = await getDb();
-  const res = await db.execute<{ id: string; kind: JobKind; payload: JobPayload; attempts: number; max_attempts: number }>(sql`
+  const rows = await queryRows<{ id: string; kind: JobKind; payload: JobPayload; attempts: number; max_attempts: number }>(db, sql`
     update scheduled_jobs
        set status = 'running', locked_at = now(), attempts = attempts + 1, updated_at = now()
      where id in (
@@ -66,7 +67,7 @@ export async function claimDueJobs(now: Date, limit = 20): Promise<JobRow[]> {
         for update skip locked
      )
      returning id, kind, payload, attempts, max_attempts`);
-  return res.rows.map((r) => ({ id: r.id, kind: r.kind, payload: r.payload, attempts: r.attempts, maxAttempts: r.max_attempts }));
+  return rows.map((r) => ({ id: r.id, kind: r.kind, payload: r.payload, attempts: r.attempts, maxAttempts: r.max_attempts }));
 }
 
 export async function completeJob(id: string) {

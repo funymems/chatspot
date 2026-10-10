@@ -1,4 +1,5 @@
 import "server-only";
+import { queryRows } from "@/lib/server/db/rows";
 import { and, asc, count, desc, eq, inArray, isNull, sql } from "drizzle-orm";
 import { getDb } from "@/lib/server/db/client";
 import { aiAgents, knowledgeEntries, knowledgeSources, unansweredQuestions } from "@/lib/server/db/schema";
@@ -206,7 +207,7 @@ export async function searchKnowledge(workspaceId: string, agentId: string, ques
   const tsq = buildSearchQuery(question);
   if (!tsq) return [];
   const db = await getDb();
-  const res = await db.execute<{ source_id: string; title: string; type: KnowledgeSource["type"]; content: string; answer: string | null; rank: number }>(sql`
+  const rows = await queryRows<{ source_id: string; title: string; type: KnowledgeSource["type"]; content: string; answer: string | null; rank: number }>(db, sql`
     select e.source_id, s.title, s.type, e.content, s.answer, ts_rank_cd(e.search, q) as rank
       from knowledge_entries e
       join knowledge_sources s on s.id = e.source_id
@@ -214,7 +215,7 @@ export async function searchKnowledge(workspaceId: string, agentId: string, ques
      where e.workspace_id = ${workspaceId} and e.agent_id = ${agentId} and e.search @@ q
      order by rank desc
      limit ${limit}`);
-  return res.rows.map((r) => ({ sourceId: r.source_id, title: r.title, type: r.type, content: r.content, answer: r.answer, rank: Number(r.rank) }));
+  return rows.map((r) => ({ sourceId: r.source_id, title: r.title, type: r.type, content: r.content, answer: r.answer, rank: Number(r.rank) }));
 }
 
 // ─── Unanswered questions ───────────────────────────────────────────────────

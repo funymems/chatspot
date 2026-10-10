@@ -2,22 +2,27 @@ import "server-only";
 import fs from "node:fs";
 import path from "node:path";
 import { PGlite } from "@electric-sql/pglite";
-import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
-import { migrate } from "drizzle-orm/pglite/migrator";
+import { drizzle as drizzlePglite, type PgliteDatabase } from "drizzle-orm/pglite";
+import { migrate as migratePglite } from "drizzle-orm/pglite/migrator";
+import { drizzle as drizzlePg } from "drizzle-orm/node-postgres";
+import { Pool } from "pg";
 import * as schema from "./schema";
 import { logger } from "@/lib/server/logger";
 import { syncSystemTemplates } from "./bootstrap";
 
 /**
- * Phase-1 persistence: an embedded Postgres (PGlite) persisted to ./.data.
+ * Two interchangeable backends behind one `Database` type:
  *
- * PGlite is single-process. We keep exactly one instance per Node process
- * (cached on globalThis so dev HMR and separate route bundles share it) and a
- * lock file so a second process (e.g. `npm run db:reset` while `next dev` runs)
- * fails loudly instead of corrupting the data directory.
+ * - **Postgres (production)** when `DATABASE_URL` is set — e.g. Supabase via
+ *   its transaction pooler (port 6543). Uses node-postgres, which returns
+ *   `{ rows }` from raw queries exactly like PGlite. Migrations are applied by
+ *   `npm run db:migrate` (run automatically by `vercel-build`), not at runtime,
+ *   so concurrent serverless cold starts never race on the schema.
+ * - **PGlite (local development)** otherwise: embedded Postgres persisted to
+ *   ./.data, migrated on first use, single process (guarded by a lock file).
  *
- * Swapping to Supabase/Postgres later means replacing this module with a
- * `drizzle-orm/postgres-js` client; repositories only depend on `Database`.
+ * Both are Postgres, share the same SQL migrations and the same Drizzle query
+ * API, so services don't know which one they're talking to.
  */
 
 export type Database = PgliteDatabase<typeof schema>;
@@ -25,10 +30,12 @@ export type Tx = Parameters<Parameters<Database["transaction"]>[0]>[0];
 /** Anything that can run queries: the root db or an open transaction. */
 export type Executor = Database | Tx;
 
-type DbState = { db: Database; client: PGlite; ready: Promise<void> };
+type DbState = { db: Database; close: () => Promise<void>; ready: Promise<void>; kind: "postgres" | "pglite" };
 
 const globalKey = Symbol.for("chatspot.db");
 type GlobalWithDb = typeof globalThis & { [globalKey]?: DbState };
+
+export const migrationsFolder = () => path.resolve(process.cwd(), "drizzle");
 
 export function resolveDataDir(): string {
   const configured = process.env.PGLITE_DATA_DIR ?? ".data/pglite";
@@ -69,34 +76,86 @@ function isAlive(pid: number) {
   }
 }
 
+/** Local/embedded database (development, tests, scripts). */
 export function createDatabase(dataDir: string): DbState {
   const inMemory = dataDir.startsWith("memory://");
   if (!inMemory) acquireLock(dataDir);
   const client = new PGlite(dataDir);
-  const db = drizzle({ client, schema, casing: "snake_case" });
+  const db = drizzlePglite({ client, schema, casing: "snake_case" });
   const ready = (async () => {
     const started = performance.now();
-    await migrate(db, { migrationsFolder: path.resolve(process.cwd(), "drizzle") });
+    await migratePglite(db, { migrationsFolder: migrationsFolder() });
     await syncSystemTemplates(db);
-    logger.info("db.ready", { dataDir: inMemory ? dataDir : path.relative(process.cwd(), dataDir), ms: Math.round(performance.now() - started) });
+    logger.info("db.ready", { driver: "pglite", dataDir: inMemory ? dataDir : path.relative(process.cwd(), dataDir), ms: Math.round(performance.now() - started) });
   })();
-  return { db, client, ready };
+  return { db, close: () => client.close(), ready, kind: "pglite" };
+}
+
+function sslFor(url: string) {
+  const host = (() => {
+    try {
+      return new URL(url).hostname;
+    } catch {
+      return "";
+    }
+  })();
+  if (["localhost", "127.0.0.1", "::1"].includes(host) || process.env.DATABASE_SSL === "off") return false;
+  // Supabase's pooler presents a certificate from Supabase's own CA. Provide it via
+  // DATABASE_SSL_CA (PEM) for full verification; otherwise the connection is
+  // still encrypted but the server certificate isn't verified.
+  const ca = process.env.DATABASE_SSL_CA?.replace(/\\n/g, "\n");
+  return ca ? { ca, rejectUnauthorized: true } : { rejectUnauthorized: false };
+}
+
+/** Hosted Postgres (Supabase, Neon, …) via DATABASE_URL. */
+export function createPostgresDatabase(url: string): DbState {
+  const pool = new Pool({
+    connectionString: url,
+    ssl: sslFor(url),
+    // Serverless functions run many small instances: keep each pool tiny and let the pooler fan in.
+    max: Number(process.env.DATABASE_POOL_MAX ?? 3),
+    idleTimeoutMillis: 10_000,
+    connectionTimeoutMillis: 10_000,
+  });
+  pool.on("error", (err) => logger.error("db.pool_error", { err }));
+  const db = drizzlePg({ client: pool, schema, casing: "snake_case" }) as unknown as Database;
+  return { db, close: () => pool.end(), ready: Promise.resolve(), kind: "postgres" };
 }
 
 function state(): DbState {
   const g = globalThis as GlobalWithDb;
-  if (!g[globalKey]) g[globalKey] = createDatabase(resolveDataDir());
+  if (!g[globalKey]) {
+    const url = process.env.DATABASE_URL?.trim();
+    if (url) g[globalKey] = createPostgresDatabase(url);
+    else if (process.env.VERCEL) {
+      throw new Error(
+        "DATABASE_URL is not set. Serverless deployments can't use the embedded local database — add a Postgres connection string (e.g. Supabase) in the project's environment variables.",
+      );
+    } else g[globalKey] = createDatabase(resolveDataDir());
+  }
   return g[globalKey];
 }
 
-/** Returns the migrated database. Always await before querying. */
+/** Returns the ready database. Always await before querying. */
 export async function getDb(): Promise<Database> {
   const s = state();
   await s.ready;
   return s.db;
 }
 
+/** Which backend is in use ("postgres" | "pglite"). */
+export function databaseKind() {
+  return state().kind;
+}
+
 /** Test/scripts helper: replace the process-wide instance. */
 export function setDbForTesting(next: DbState | undefined) {
   (globalThis as GlobalWithDb)[globalKey] = next;
+}
+
+/** Scripts: close the connection so the process can exit. */
+export async function closeDb() {
+  const g = globalThis as GlobalWithDb;
+  await g[globalKey]?.close();
+  g[globalKey] = undefined;
 }

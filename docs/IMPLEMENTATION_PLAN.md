@@ -227,3 +227,10 @@ Choice: **`claude-haiku-5-5`** through the official `@anthropic-ai/sdk`. It's at
 - `/api/webhooks/instagram`: GET verification and POST with an `X-Hub-Signature-256` check on the raw body. Zod validation, async processing via `scheduled_jobs`, idempotency through a body-hash job key plus `inbound_events`. Incoming DMs go to the inbox (receive-only; no auto-replies).
 - Tables `channel_connections` and `oauth_states` (migration 0001). Settings integration card and a dashboard quick action. 16 tests with mocked Meta responses.
 - Details and the manual Meta steps are in `docs/INSTAGRAM_INTEGRATION_REPORT.txt`.
+
+### Production database: Supabase/Postgres (2026-10-10)
+- `DATABASE_URL` switches the app to node-postgres (Supabase transaction pooler); PGlite stays as the local and test backend. Same Drizzle API and SQL migrations.
+- `npm run db:migrate` plus `vercel-build` migrate the database once per deploy (never at serverless runtime). Raw queries go through `queryRows()` so both drivers behave the same.
+- Tested over a real Postgres wire-protocol server (`tests/postgres-driver.test.ts`, PGlite socket server): migrations, auth, the engine, the job queue with SKIP LOCKED, and FTS.
+- The job ticker is disabled on Vercel; jobs run via `after()`, a daily Vercel cron, and an optional Supabase `pg_cron` per-minute call.
+- Public `/privacy` and `/data-deletion` pages for Meta Live mode and App Review.

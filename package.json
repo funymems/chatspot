@@ -13,7 +13,9 @@
     "db:generate": "drizzle-kit generate",
     "db:seed": "tsx --conditions=react-server scripts/seed.mts",
     "db:reset": "tsx --conditions=react-server scripts/reset.mts",
-    "check": "npm run typecheck && npm run lint && npm run test"
+    "check": "npm run typecheck && npm run lint && npm run test",
+    "db:migrate": "tsx --conditions=react-server scripts/migrate.mts",
+    "vercel-build": "npm run db:migrate && next build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0",
@@ -27,6 +29,7 @@
     "lucide-react": "^1.55.0",
     "next": "16.4.0",
     "next-themes": "^0.4.6",
+    "pg": "^8.23.1",
     "radix-ui": "^1.7.0",
     "react": "19.3.0",
     "react-dom": "19.3.0",
@@ -38,8 +41,10 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@electric-sql/pglite-socket": "^0.2.11",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "@vitejs/plugin-react": "^4.7.0",

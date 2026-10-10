@@ -6,6 +6,8 @@
  */
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.JOB_WORKER === "off") return;
+  // Serverless instances can't run a background loop; jobs run via after() and a cron there.
+  if (process.env.VERCEL) return;
   if (process.env.NEXT_PHASE === "phase-production-build") return;
   process.env.JOB_TICK_SECRET ??= Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, "0")).join("");
   const port = process.env.PORT ?? "3000";

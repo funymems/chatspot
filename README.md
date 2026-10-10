@@ -33,6 +33,34 @@ PGlite is **single-process**:
 - Stop `npm run dev` before running `npm run db:seed` or `npm run db:reset`; the scripts refuse to run while it's up.
 - Migrations in `drizzle/` are applied automatically the first time the database is opened.
 
+## Deploying to Vercel with Supabase
+
+Production uses hosted Postgres; the embedded PGlite database is for local development only.
+
+1. **Supabase**: create a project and click **Connect**. Under **Transaction pooler** (port **6543**), copy the URI and put your database password in it.
+2. **Vercel** → Settings → Environment Variables:
+   - `DATABASE_URL`: the pooler URI from step 1
+   - `APP_BASE_URL`: e.g. `https://chatspot-rho.vercel.app`
+   - `TOKEN_ENCRYPTION_KEY`, `INSTAGRAM_*`, `GEMINI_API_KEY`: see the table below
+   - `SUPPORT_EMAIL`: shown on `/privacy` and `/data-deletion`
+   - `CRON_SECRET`: any long random string
+3. **Deploy.** The `vercel-build` script runs `npm run db:migrate` (SQL migrations plus template sync) before `next build`, so every deploy migrates the database once, before the new code serves traffic. If `DATABASE_URL` is missing, the build fails on purpose.
+4. **Background jobs** (automation delays, reply timeouts, retries): Vercel functions can't run a loop.
+   - Instagram webhooks are processed right after each request via `after()`.
+   - `vercel.json` adds a daily cron as a fallback; Hobby plans allow only daily crons.
+   - For minute-level timing, schedule a call from Supabase (Database → Cron, `pg_cron` + `pg_net`):
+
+     ```sql
+     select cron.schedule('chatspot-jobs', '* * * * *', $$
+       select net.http_post(
+         url := 'https://YOUR-DOMAIN/api/jobs/tick',
+         headers := jsonb_build_object('Authorization', 'Bearer YOUR_CRON_SECRET')
+       )
+     $$);
+     ```
+
+TLS: the connection is encrypted. To also verify Supabase's certificate, put its CA certificate (PEM) in `DATABASE_SSL_CA`.
+
 ## Scripts
 
 | Script | What it does |
@@ -45,12 +73,15 @@ PGlite is **single-process**:
 | `npm run db:generate` | Generate a SQL migration after editing `src/lib/server/db/schema.ts` |
 | `npm run db:seed` | Idempotently create the demo account and workspace |
 | `npm run db:reset` | Delete the local database, re-migrate and re-seed |
+| `npm run db:migrate` | Migrate `DATABASE_URL` (Postgres/Supabase) if set, otherwise the local PGlite DB |
 
 ## Environment variables
 
 | Variable | Default | Notes |
 |---|---|---|
-| `PGLITE_DATA_DIR` | `.data/pglite` | Use `memory://` for a throwaway in-memory DB |
+| `DATABASE_URL` | *(empty)* | Postgres connection string (Supabase transaction pooler). When set, it replaces the local PGlite database. Required on Vercel. |
+| `PGLITE_DATA_DIR` | `.data/pglite` | Local only. Use `memory://` for a throwaway in-memory DB |
+| `SUPPORT_EMAIL` | *(empty)* | Contact address on `/privacy` and `/data-deletion` |
 | `GEMINI_API_KEY` | *(empty)* | Server-only Google Gemini key ([get one](https://aistudio.google.com/apikey)). When empty, AI features run in a clearly labelled deterministic demo mode. |
 | `AI_MODEL` | `gemini-3.5-flash-lite` | $0.30 / $2.50 per 1M tokens. For smarter answers try `gemini-3.8-flash`. |
 | `APP_BASE_URL`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, `TOKEN_ENCRYPTION_KEY` | *(empty)* | Instagram integration. See [docs/INSTAGRAM_INTEGRATION_REPORT.txt](docs/INSTAGRAM_INTEGRATION_REPORT.txt) |
