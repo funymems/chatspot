@@ -1,14 +1,19 @@
 import "server-only";
 import { logger } from "@/lib/server/logger";
 import { runExecution } from "@/lib/server/engine/runtime";
-import { claimDueJobs, completeJob, failJob, type JobRow } from "./queue";
+import { claimDueJobs, completeJob, failJob, type InstagramWebhookPayload, type JobRow, type ResumePayload } from "./queue";
 
 async function handle(job: JobRow) {
   switch (job.kind) {
     case "execution.resume": {
-      const { executionId, token, reason } = job.payload;
+      const { executionId, token, reason } = job.payload as ResumePayload;
       // Stale tokens are ignored inside runExecution, so replays are harmless.
       await runExecution(executionId, { token, reason });
+      return;
+    }
+    case "instagram.webhook": {
+      const { processInstagramEvents } = await import("@/lib/server/integrations/instagram/events");
+      await processInstagramEvents((job.payload as InstagramWebhookPayload).events);
       return;
     }
   }

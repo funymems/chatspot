@@ -221,3 +221,9 @@ Choice: **`claude-haiku-5-5`** through the official `@anthropic-ai/sdk`. It's at
 - Templates gallery: category filter, flow preview dialog, "Use template" creates a draft and opens the builder.
 - Analytics: 7/30/90-day and all-time ranges plus a live/test filter. Total runs, successful, failed, completion rate, leads; conversions are labelled test/live goal-reached runs. Daily stacked status chart with a table view, most-triggered automations, node failures with the last error, execution history.
 - Checks: 97 tests, tsc, ESLint and `next build` pass. Verified in the browser: simulated customer → COURSE automation → reply resumes the run → link sent → contact created with a tag, and analytics shows the runs.
+
+### Instagram integration foundation (2026-10-10)
+- Instagram API with Instagram Login: server-side OAuth (hashed single-use state bound to the user, cancel and error handling, scope check), long-lived tokens encrypted with AES-256-GCM, hourly refresh, `token_expired` status.
+- `/api/webhooks/instagram`: GET verification and POST with an `X-Hub-Signature-256` check on the raw body. Zod validation, async processing via `scheduled_jobs`, idempotency through a body-hash job key plus `inbound_events`. Incoming DMs go to the inbox (receive-only; no auto-replies).
+- Tables `channel_connections` and `oauth_states` (migration 0001). Settings integration card and a dashboard quick action. 16 tests with mocked Meta responses.
+- Details and the manual Meta steps are in `docs/INSTAGRAM_INTEGRATION_REPORT.txt`.

@@ -3,7 +3,7 @@ import { eq, sql } from "drizzle-orm";
 import { getDb, type Executor } from "@/lib/server/db/client";
 import { scheduledJobs } from "@/lib/server/db/schema";
 
-export type JobKind = "execution.resume";
+export type JobKind = "execution.resume" | "instagram.webhook";
 
 export type ResumePayload = {
   executionId: string;
@@ -12,17 +12,23 @@ export type ResumePayload = {
   reason: "delay" | "reply_timeout" | "retry";
 };
 
+export type InstagramWebhookPayload = { events: import("@/lib/server/integrations/instagram/events").NormalizedIgEvent[] };
+
+export type JobPayload = ResumePayload | InstagramWebhookPayload;
+
 export type JobRow = {
   id: string;
   kind: JobKind;
-  payload: ResumePayload;
+  payload: JobPayload;
   attempts: number;
   maxAttempts: number;
 };
 
 /** Persists a job. With a dedupe key, enqueueing the same logical job twice is a no-op. */
 export async function enqueueJob(
-  input: { workspaceId: string | null; kind: JobKind; payload: ResumePayload; runAt: Date; dedupeKey?: string; maxAttempts?: number },
+  input:
+    | { workspaceId: string | null; kind: "execution.resume"; payload: ResumePayload; runAt: Date; dedupeKey?: string; maxAttempts?: number }
+    | { workspaceId: string | null; kind: "instagram.webhook"; payload: InstagramWebhookPayload; runAt: Date; dedupeKey?: string; maxAttempts?: number },
   tx?: Executor,
 ) {
   const db = tx ?? (await getDb());
@@ -48,7 +54,7 @@ const STALE_LOCK = "5 minutes";
  */
 export async function claimDueJobs(now: Date, limit = 20): Promise<JobRow[]> {
   const db = await getDb();
-  const res = await db.execute<{ id: string; kind: JobKind; payload: ResumePayload; attempts: number; max_attempts: number }>(sql`
+  const res = await db.execute<{ id: string; kind: JobKind; payload: JobPayload; attempts: number; max_attempts: number }>(sql`
     update scheduled_jobs
        set status = 'running', locked_at = now(), attempts = attempts + 1, updated_at = now()
      where id in (

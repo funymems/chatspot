@@ -1,6 +1,7 @@
 import { timingSafeEqual } from "node:crypto";
 import { processDueJobs } from "@/lib/server/jobs/worker";
 import { logger } from "@/lib/server/logger";
+import { maybeRefreshInstagramTokens } from "@/lib/server/integrations/instagram/connections";
 
 /**
  * Processes due background jobs (delays, reply timeouts, retries).
@@ -11,6 +12,8 @@ export async function POST(request: Request) {
   if (!authorized(request)) return Response.json({ error: "Unauthorized" }, { status: 401 });
   try {
     const processed = await processDueJobs();
+    // Hourly at most: refresh Instagram long-lived tokens before they expire.
+    await maybeRefreshInstagramTokens().catch((err) => logger.error("instagram.refresh_tick_failed", { err }));
     return Response.json({ processed });
   } catch (err) {
     logger.error("jobs.tick_failed", { err });

@@ -53,6 +53,7 @@ PGlite is **single-process**:
 | `PGLITE_DATA_DIR` | `.data/pglite` | Use `memory://` for a throwaway in-memory DB |
 | `GEMINI_API_KEY` | *(empty)* | Server-only Google Gemini key ([get one](https://aistudio.google.com/apikey)). When empty, AI features run in a clearly labelled deterministic demo mode. |
 | `AI_MODEL` | `gemini-3.5-flash-lite` | $0.30 / $2.50 per 1M tokens. For smarter answers try `gemini-3.8-flash`. |
+| `APP_BASE_URL`, `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `INSTAGRAM_WEBHOOK_VERIFY_TOKEN`, `TOKEN_ENCRYPTION_KEY` | *(empty)* | Instagram integration. See [docs/INSTAGRAM_INTEGRATION_REPORT.txt](docs/INSTAGRAM_INTEGRATION_REPORT.txt) |
 | `JOB_WORKER` | *(on)* | `off` disables the dev job ticker (use a cron calling `/api/jobs/tick` instead) |
 | `CRON_SECRET` | *(empty)* | Bearer token accepted by `/api/jobs/tick` |
 | `LOG_LEVEL` | `info` | Structured JSON logs: `debug` / `info` / `warn` / `error` |

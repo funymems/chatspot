@@ -5,6 +5,7 @@ import {
   Activity,
   ArrowRight,
   Bot,
+  Plug,
   CheckCircle2,
   Circle,
   LayoutTemplate,
@@ -167,6 +168,15 @@ async function Dashboard({ params }: { params: Props["params"] }) {
                 <span className="text-left">
                   <span className="block font-medium">Create an AI agent</span>
                   <span className="block text-xs font-normal text-muted-foreground">Answers from your knowledge base</span>
+                </span>
+              </Link>
+            </Button>
+            <Button asChild variant="outline" className="h-auto justify-start py-2.5">
+              <Link href={`/w/${slug}/settings#integrations`}>
+                <Plug className="text-primary" aria-hidden />
+                <span className="text-left">
+                  <span className="block font-medium">Connect Instagram</span>
+                  <span className="block text-xs font-normal text-muted-foreground">Receive Direct messages in your inbox</span>
                 </span>
               </Link>
             </Button>

@@ -33,7 +33,8 @@ type GlobalWithDb = typeof globalThis & { [globalKey]?: DbState };
 export function resolveDataDir(): string {
   const configured = process.env.PGLITE_DATA_DIR ?? ".data/pglite";
   if (configured.startsWith("memory://")) return configured;
-  return path.resolve(process.cwd(), configured);
+  // Runtime data location, not a source dependency: keep it out of file tracing.
+  return path.resolve(/*turbopackIgnore: true*/ process.cwd(), configured);
 }
 
 function acquireLock(dataDir: string) {

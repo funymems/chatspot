@@ -583,3 +583,63 @@ export const notifications = pgTable(
   },
   (t) => [index("notifications_ws_created_idx").on(t.workspaceId, t.createdAt)],
 );
+
+// ─── Channel integrations ───────────────────────────────────────────────────
+
+export const connectionStatus = pgEnum("connection_status", ["active", "token_expired", "error", "disconnected"]);
+
+/**
+ * An external messaging account connected to a workspace (Instagram first).
+ * The access token is stored encrypted (AES-256-GCM, key from
+ * TOKEN_ENCRYPTION_KEY) and is never selected into client-facing queries.
+ */
+export const channelConnections = pgTable(
+  "channel_connections",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    provider: text("provider").notNull(), // "instagram"
+    /** Professional account id used as `entry[].id` in webhooks. */
+    providerAccountId: text("provider_account_id").notNull(),
+    /** App-scoped user id returned by the token exchange (may equal the account id). */
+    providerUserId: text("provider_user_id"),
+    username: text("username").notNull().default(""),
+    status: connectionStatus("status").notNull().default("active"),
+    accessTokenEncrypted: text("access_token_encrypted"),
+    tokenExpiresAt: ts("token_expires_at"),
+    tokenRefreshedAt: ts("token_refreshed_at"),
+    grantedScopes: jsonb("granted_scopes").$type<string[]>().notNull().default([]),
+    /** Set only when Meta confirmed the subscribed_apps call. */
+    webhookSubscribedAt: ts("webhook_subscribed_at"),
+    lastWebhookAt: ts("last_webhook_at"),
+    lastError: text("last_error"),
+    connectedBy: uuid("connected_by").references(() => users.id, { onDelete: "set null" }),
+    createdAt: createdAt(),
+    updatedAt: updatedAt(),
+  },
+  (t) => [
+    // An external account can belong to only one workspace (unambiguous webhook routing).
+    uniqueIndex("channel_connections_provider_account_idx").on(t.provider, t.providerAccountId),
+    index("channel_connections_ws_idx").on(t.workspaceId, t.provider),
+  ],
+);
+
+/** Single-use OAuth `state` values (stored hashed), bound to the user and workspace that started the flow. */
+export const oauthStates = pgTable(
+  "oauth_states",
+  {
+    id: text("id").primaryKey(), // sha256(state)
+    provider: text("provider").notNull(),
+    workspaceId: uuid("workspace_id")
+      .notNull()
+      .references(() => workspaces.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: ts("expires_at").notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [index("oauth_states_expires_idx").on(t.expiresAt)],
+);

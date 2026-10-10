@@ -1,0 +1,310 @@
+ОТЧЁТ: ИНТЕГРАЦИЯ INSTAGRAM API И ВЕБХУКОВ — ChatSpot
+Дата: 2026-10-10
+====================================================================
+
+Коротко
+-------
+Сделана основа интеграции с Instagram через официальный
+"Instagram API with Instagram Login":
+- серверный OAuth для профессиональных аккаунтов (Business и Creator);
+- зашифрованное хранение токенов и их автообновление;
+- публичный вебхук с проверкой подписи;
+- асинхронная и идемпотентная обработка событий;
+- входящие Direct-сообщения попадают в Inbox;
+- статус подключения в интерфейсе.
+
+Отправка ответов в Instagram и автоответы НАМЕРЕННО не включены (см. раздел 10).
+
+Все 113 автотестов (16 из них — новые, для Instagram) реально запущены и
+проходят. Проверка типов, линтер и production-сборка тоже проходят. Ответы
+Meta в тестах подменены моками, поэтому реальное подключение к Instagram
+end-to-end НЕ проверялось: нет ключей приложения и публичного HTTPS-домена.
+
+
+1. КАКАЯ АРХИТЕКТУРА БЫЛА НАЙДЕНА
+---------------------------------
+- Next.js 16.4 (App Router, Turbopack, Cache Components), TypeScript strict.
+- UI: Tailwind CSS 4, shadcn/ui, React Flow.
+- База: PGlite (встроенный Postgres, хранится в .data/), Drizzle ORM и
+  SQL-миграции в drizzle/. Supabase НЕ используется (решение этапа 1).
+- Аутентификация: своя (email/пароль, scrypt, httpOnly cookie-сессия).
+- Мультитенантность: workspaces. Доступ проверяется на сервере через
+  resolveWorkspaceAccess (RLS нет, потому что нет Supabase).
+- Абстракция каналов уже была: ChannelProvider (sendMessage, receiveEvent,
+  verifyWebhook, getCapabilities) и MockChannelProvider.
+- Очередь фоновых задач: таблица scheduled_jobs и маршрут /api/jobs/tick.
+- Идемпотентность входящих событий уже была: таблица inbound_events с
+  уникальным ключом (workspace, channel, external_event_id).
+- Деплой: в Vercel НЕ развёрнуто, публичного домена нет.
+  ВАЖНО: PGlite работает только в одном процессе на диске и не подходит для
+  serverless (Vercel). Для продакшена нужен Postgres (например Supabase) или
+  обычный Node-сервер/VPS с постоянным диском.
+- Кода для Instagram до этой задачи не было. Был только заглушечный
+  комментарий в реестре каналов.
+
+
+2. СОЗДАННЫЕ И ИЗМЕНЁННЫЕ ФАЙЛЫ
+-------------------------------
+Созданы:
+  src/lib/server/integrations/instagram/config.ts       эндпоинты, scopes, чтение env
+  src/lib/server/integrations/instagram/api.ts          клиент Meta API (обмен кода, long-lived, refresh, профиль, подписка вебхуков)
+  src/lib/server/integrations/instagram/oauth.ts        старт OAuth, state, обработка callback
+  src/lib/server/integrations/instagram/connections.ts  чтение статуса (без токенов), отключение, обновление токенов
+  src/lib/server/integrations/instagram/webhook.ts      верификация GET, подпись, приём POST
+  src/lib/server/integrations/instagram/events.ts       Zod-схема payload, нормализация, обработка событий в Inbox
+  src/lib/server/integrations/token-crypto.ts           шифрование токенов AES-256-GCM
+  src/lib/channels/instagram.ts                         провайдер канала Instagram (пока только приём)
+  src/app/api/webhooks/instagram/route.ts               публичный вебхук (GET и POST)
+  src/app/api/integrations/instagram/callback/route.ts  OAuth redirect URI
+  src/app/actions/integrations.ts                       server actions «подключить» и «отключить»
+  src/components/integrations/instagram-card.tsx        карточка интеграции в «Настройках»
+  drizzle/0001_instagram_integration.sql                миграция (channel_connections, oauth_states)
+  tests/instagram.test.ts                               16 тестов
+  docs/INSTAGRAM_INTEGRATION_REPORT.txt                 этот отчёт
+
+Изменены:
+  src/lib/server/db/schema.ts           таблицы channel_connections и oauth_states
+  src/lib/server/jobs/queue.ts          новый тип задачи "instagram.webhook"
+  src/lib/server/jobs/worker.ts         обработчик этой задачи
+  src/app/api/jobs/tick/route.ts        автообновление токенов (не чаще раза в час)
+  src/lib/channels/registry.ts          регистрация канала "instagram"
+  src/app/w/[slug]/settings/page.tsx    раздел «Интеграции»
+  src/app/w/[slug]/dashboard/page.tsx   кнопка «Connect Instagram» в Quick actions
+  src/lib/server/db/client.ts           убрано предупреждение сборки о трассировке файлов
+  .env.example                          новые переменные (только плейсхолдеры)
+  .gitignore                            исключение !.env.example: файл раньше вообще
+                                        не попадал в git; .env.local и прочие .env*
+                                        по-прежнему игнорируются
+  README.md, docs/IMPLEMENTATION_PLAN.md
+
+
+3. КАК РАБОТАЕТ OAUTH
+---------------------
+Поток: "Business Login for Instagram" (Instagram API with Instagram Login).
+Это НЕ Facebook Login for Business: у него другие эндпоинты, scopes и токены.
+
+ 1. Владелец или админ workspace нажимает «Connect Instagram» (Настройки →
+    Instagram или Дашборд → Quick actions).
+ 2. Server action startInstagramConnect:
+    - проверяет роль (owner или admin);
+    - проверяет, что сервер настроен;
+    - создаёт случайный state (32 байта). В таблицу oauth_states пишется только
+      его SHA-256, привязанный к пользователю и workspace, на 10 минут.
+ 3. Браузер уходит на
+    https://www.instagram.com/oauth/authorize?client_id=…&redirect_uri=…
+      &response_type=code&scope=instagram_business_basic,instagram_business_manage_messages&state=…
+    Запрашиваются только два разрешения: профиль и сообщения.
+ 4. Instagram возвращает пользователя на
+    /api/integrations/instagram/callback?code=…&state=…
+    Шаги обработки callback:
+    - state: должен существовать, не истечь и принадлежать ТОМУ ЖЕ
+      пользователю. State одноразовый и удаляется сразу.
+    - Отмена (error=access_denied / user_denied): показывается «авторизация
+      отменена».
+    - Обмен кода на короткий токен:
+      POST https://api.instagram.com/oauth/access_token (хвост "#_" у code
+      отрезается).
+    - Проверка выданных разрешений: если чего-то не хватает, показывается
+      ошибка.
+    - Обмен на long-lived токен (60 дней):
+      GET https://graph.instagram.com/access_token?grant_type=ig_exchange_token
+    - Профиль: GET https://graph.instagram.com/v25.0/me?fields=user_id,username
+    - Один и тот же Instagram-аккаунт нельзя подключить к двум workspace.
+    - Подписка на вебхуки:
+      POST https://graph.instagram.com/v25.0/me/subscribed_apps?subscribed_fields=messages
+      Если Meta не подтвердила подписку, подключение сохраняется, но с
+      предупреждением.
+    - Токен шифруется AES-256-GCM (ключ TOKEN_ENCRYPTION_KEY) и сохраняется в
+      channel_connections. В браузер и в логи он не попадает никогда.
+ 5. Пользователь возвращается в Настройки с сообщением об успехе или
+    понятной ошибкой.
+
+Обновление токена:
+- раз в час (через тик фоновых задач) обновляются токены старше 24 часов,
+  которые истекают в ближайшие 10 дней:
+  GET https://graph.instagram.com/refresh_access_token?grant_type=ig_refresh_token
+- истёкшие токены или отказ Meta переводят статус в token_expired, и UI
+  просит переподключиться.
+
+
+4. КАК РАБОТАЮТ ВЕБХУКИ
+-----------------------
+Эндпоинт: /api/webhooks/instagram
+
+GET (верификация подписки):
+- Нужны hub.mode=subscribe, hub.verify_token и hub.challenge.
+- Токен сравнивается с INSTAGRAM_WEBHOOK_VERIFY_TOKEN за постоянное время.
+- Ответы:
+  - успех: 200, в теле ровно hub.challenge;
+  - неверный токен или mode: 403, ожидаемый токен не раскрывается;
+  - нет параметров: 400;
+  - на сервере не задан токен: 503.
+
+POST (события):
+- Читается СЫРОЕ тело запроса и проверяется X-Hub-Signature-256:
+  "sha256=" + HMAC-SHA256(тело, секрет). Принимаются INSTAGRAM_APP_SECRET и,
+  если задан, META_APP_SECRET (см. раздел 9). Неверная подпись: 401.
+- Невалидный JSON или payload: 400.
+- object, отличный от "instagram": 200, событие игнорируется.
+- Payload проверяется Zod-схемой и нормализуется. Поддерживаются: сообщения,
+  echo, удаление, postback, реакции, прочтения, referral, комментарии.
+  Неизвестные события тоже записываются, а не валят всю пачку.
+- Затем задача кладётся в очередь (ключ дедупликации = хэш тела) и сразу
+  возвращается 200 "EVENT_RECEIVED". Обработка запускается после ответа
+  (after()) и/или фоновым тиком.
+- Обработка:
+  - событие сопоставляется подключению по entry[].id;
+  - событие записывается в inbound_events с уникальным id (mid сообщения), так
+    что повторная доставка не создаст дубль;
+  - входящее DM создаёт или находит контакт (source=instagram) и диалог
+    (channel=instagram), и сообщение кладётся в Inbox.
+- Ничего НЕ отправляется в ответ: автоответы выключены.
+- В логи не пишутся ни токены, ни текст сообщений, только количества и типы.
+
+
+5. ПЕРЕМЕННЫЕ ОКРУЖЕНИЯ
+-----------------------
+Файл .env.local (локально) или Project → Settings → Environment Variables
+(на хостинге, например в Vercel):
+
+  APP_BASE_URL                    публичный HTTPS-адрес приложения без слэша на конце,
+                                  например https://app.example.com
+  INSTAGRAM_APP_ID                Instagram App ID (App Dashboard → Instagram →
+                                  API setup with Instagram login)
+  INSTAGRAM_APP_SECRET            Instagram App Secret (там же). Это НЕ секрет из
+                                  Facebook Login for Business
+  INSTAGRAM_REDIRECT_URI          необязательно. По умолчанию
+                                  $APP_BASE_URL/api/integrations/instagram/callback
+  INSTAGRAM_WEBHOOK_VERIFY_TOKEN  любая длинная случайная строка, придумываете сами.
+                                  Это НЕ access token
+  META_APP_SECRET                 необязательно: секрет из App settings → Basic, тоже
+                                  принимается для проверки подписи
+  TOKEN_ENCRYPTION_KEY            32 случайных байта в base64:
+                                  node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+  INSTAGRAM_GRAPH_VERSION         необязательно, по умолчанию v25.0
+  CRON_SECRET, JOB_WORKER=off     для serverless-деплоя (см. раздел 7)
+
+Реальные значения в .env.example не попадают. Все .env.local и прочие .env*
+игнорируются git'ом.
+
+
+6. ЧТО ВВЕСТИ В META (Callback URL и Verify Token)
+--------------------------------------------------
+Callback URL:  https://ВАШ-ДОМЕН/api/webhooks/instagram
+               Публичного домена у проекта пока НЕТ, поэтому точный адрес я
+               не выдумываю. Как только задан APP_BASE_URL, точная ссылка
+               появляется в Настройки → Instagram → «Webhook setup in Meta».
+Verify Token:  ровно то же значение, что вы положили в
+               INSTAGRAM_WEBHOOK_VERIFY_TOKEN на сервере.
+
+ВАЖНО: Meta требует HTTPS с валидным сертификатом. localhost Meta не видит.
+Для локального теста нужен безопасный туннель, например
+cloudflared tunnel --url http://localhost:3000 или ngrok http 3000. Тогда
+временный https-адрес туннеля и будет вашим APP_BASE_URL. Нажимать
+«Verify and save» в Meta стоит только когда эндпоинт уже публично доступен.
+
+Также в App Dashboard → Instagram → API setup with Instagram login → Business
+login settings добавьте в "Valid OAuth Redirect URIs" ровно:
+  https://ВАШ-ДОМЕН/api/integrations/instagram/callback
+
+
+7. КАК РАЗВЕРНУТЬ И ПРОТЕСТИРОВАТЬ
+----------------------------------
+Локально (через туннель):
+ 1. Запустите туннель, получите https-адрес.
+ 2. Заполните .env.local (раздел 5), APP_BASE_URL = адрес туннеля.
+ 3. npm run dev. Миграция 0001 применится автоматически при старте.
+ 4. В Meta: укажите Redirect URI, Callback URL и Verify Token, нажмите
+    Verify and save, подпишитесь на поле messages.
+ 5. В ChatSpot: Настройки → Connect Instagram → войдите профессиональным
+    аккаунтом, у которого есть роль в вашем Meta-приложении.
+ 6. Напишите этому аккаунту в Direct с другого аккаунта. Сообщение должно
+    появиться в Conversations, а в карточке обновится «Last event received».
+
+Продакшен:
+- Vercel в текущем виде НЕ подойдёт: PGlite держит базу на локальном диске в
+  одном процессе. Варианты:
+  (а) VPS или Docker с постоянным диском (npm run build && npm start, за
+      HTTPS-прокси);
+  (б) перевести БД на Postgres или Supabase. Схема и миграции уже на
+      Postgres; нужен драйвер postgres-js вместо PGlite. Тогда можно Vercel:
+      JOB_WORKER=off, cron на /api/jobs/tick с заголовком
+      Authorization: Bearer $CRON_SECRET, переменные в Vercel → Project →
+      Settings → Environment Variables.
+
+Автотесты: npm test. Все тесты Instagram используют моки Meta и не
+требуют реальных ключей.
+
+
+8. СДЕЛАНО В КОДЕ И ЧТО НУЖНО СДЕЛАТЬ ВАМ В META
+------------------------------------------------
+Сделано в коде:
+  [x] OAuth Instagram Login: state, отмена, ошибки, обмен токенов, проверка scopes
+  [x] Зашифрованное хранение токенов, автообновление, статус token_expired
+  [x] Вебхук: верификация, подпись, валидация, очередь, идемпотентность
+  [x] Входящие DM сохраняются в Inbox (контакт и диалог создаются автоматически)
+  [x] Статус интеграции в Настройках, кнопка на Дашборде, понятные ошибки
+  [x] Изоляция между workspace: один IG-аккаунт привязан только к одному
+      workspace, чужие подключения недоступны
+  [x] 16 тестов на всё перечисленное в ТЗ, реально запущены и проходят
+
+Нужно сделать вам в Meta (вручную):
+  [ ] Создать или выбрать приложение типа Business и добавить продукт Instagram
+      → "API setup with Instagram login"
+  [ ] Взять Instagram App ID и Secret, заполнить env
+  [ ] Добавить Valid OAuth Redirect URI (раздел 6)
+  [ ] Configure webhooks: Callback URL, Verify Token, подписка на "messages"
+  [ ] Добавить тестовые Instagram-аккаунты в роли приложения (Instagram testers /
+      App roles) и принять приглашение в самом Instagram
+  [ ] Перевести приложение в Live: по документации Meta вебхуки приходят
+      только Live-приложениям
+  [ ] Для работы с ЧУЖИМИ аккаунтами (клиентами SaaS) нужен Advanced Access:
+      App Review по instagram_business_basic и instagram_business_manage_messages
+      (скринкаст, описание use case, privacy policy URL, иконка 1024×1024,
+      хотя бы один успешный API-вызов) и Business Verification
+  [ ] Подписка на comments потребует ещё instagram_business_manage_comments,
+      Advanced Access и публичный аккаунт
+
+
+9. ЧТО МЕШАЕТ ПРОВЕРИТЬ ВСЁ END-TO-END ПРЯМО СЕЙЧАС
+---------------------------------------------------
+- Нет реальных INSTAGRAM_APP_ID и INSTAGRAM_APP_SECRET.
+- Нет публичного HTTPS-домена или туннеля, поэтому Meta не может достучаться
+  до вебхука.
+- Приложение в Meta не в режиме Live, нет тестовых аккаунтов с ролями.
+- Неясность в документации: по какому именно секрету Meta подписывает
+  вебхуки для Instagram Login (Instagram App Secret или App Secret из Basic).
+  Поэтому код принимает оба (INSTAGRAM_APP_SECRET и необязательный
+  META_APP_SECRET).
+- Неясность в документации: какой ID приходит в entry[].id. Я сопоставляю его
+  с user_id из /me (ID профессионального аккаунта) и храню также ID из обмена
+  токена. Это надо подтвердить на первом реальном событии.
+- Для продакшена нужна инфраструктура, совместимая с PGlite, или переход на
+  Postgres (раздел 7).
+- Remote git переехал на github.com/funymems/chatspot. Пуш работает через
+  редирект GitHub, но обновить адрес лучше командой:
+  git remote set-url origin https://github.com/funymems/chatspot.git
+
+
+10. СЛЕДУЮЩИЕ ШАГИ: ВХОДЯЩИЕ DM И ОТВЕТЫ ЧЕРЕЗ ОФИЦИАЛЬНЫЙ API
+-------------------------------------------------------------
+ 1. Подтвердить на реальном аккаунте формат entry[].id и подписи (раздел 9).
+ 2. Имена контактов: запрашивать профиль отправителя (IGSID) через официальный
+    User Profile API, если он доступен для Instagram Login, вместо заглушки
+    «Instagram user ####».
+ 3. Отправка: реализовать InstagramChannelProvider.sendMessage через
+    POST https://graph.instagram.com/v25.0/me/messages
+    с телом { recipient: { id: IGSID }, message: { text } }, заголовком
+    Authorization: Bearer <токен> и текстом не длиннее 1000 байт. Статус
+    "sent" ставить только после ответа с message_id.
+ 4. Соблюдать правила: писать можно только после сообщения пользователя и
+    только в течение 24 часов; вне окна — только human agent tag и только для
+    живых операторов. Хранить время последнего входящего сообщения в диалоге и
+    блокировать отправку вне окна.
+ 5. Включать автоответы отдельным явным переключателем на уровне workspace
+    (по умолчанию выключено). Только после этого направлять входящие события
+    в handleInboundMessage, то есть в движок автоматизаций.
+ 6. Учесть ограничения канала: quick replies (лимит Meta), отсутствие
+    URL-кнопок в простом тексте, повторы при 429/5xx через существующий
+    RetryableError в движке.
+ 7. Пройти App Review для Advanced Access с записанным end-to-end скринкастом.

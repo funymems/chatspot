@@ -9,25 +9,46 @@ import { requireUser, requireWorkspace } from "@/lib/server/auth/guards";
 import { hasRole } from "@/lib/server/auth/context";
 import { listMembers } from "@/lib/server/services/workspaces";
 import { ProfileForm, WorkspaceForm } from "./settings-forms";
+import { InstagramCard } from "@/components/integrations/instagram-card";
+import { getInstagramConnection } from "@/lib/server/integrations/instagram/connections";
+import { oauthErrorMessages } from "@/lib/server/integrations/instagram/oauth";
+import { WEBHOOK_PATH, appBaseUrl, missingOAuthConfig } from "@/lib/server/integrations/instagram/config";
 
 export const metadata: Metadata = { title: "Settings" };
 
-export default function SettingsPage({ params }: PageProps<"/w/[slug]/settings">) {
+export default function SettingsPage({ params, searchParams }: PageProps<"/w/[slug]/settings">) {
   return (
     <PageContainer className="max-w-4xl">
-      <PageHeader title="Settings" description="Manage your workspace, members and profile." />
+      <PageHeader title="Settings" description="Manage your workspace, members, integrations and profile." />
       <Suspense fallback={<SettingsSkeleton />}>
-        <SettingsContent params={params} />
+        <SettingsContent params={params} searchParams={searchParams} />
       </Suspense>
     </PageContainer>
   );
 }
 
-async function SettingsContent({ params }: { params: PageProps<"/w/[slug]/settings">["params"] }) {
+async function SettingsContent({
+  params,
+  searchParams,
+}: {
+  params: PageProps<"/w/[slug]/settings">["params"];
+  searchParams: PageProps<"/w/[slug]/settings">["searchParams"];
+}) {
   const { slug } = await params;
+  const sp = await searchParams;
   const [ctx, user] = await Promise.all([requireWorkspace(slug), requireUser()]);
-  const members = await listMembers(ctx);
+  const [members, ig] = await Promise.all([listMembers(ctx), getInstagramConnection(ctx)]);
   const canEdit = hasRole(ctx.role, "admin");
+  const errorReason = typeof sp.instagram_error === "string" ? (sp.instagram_error as keyof typeof oauthErrorMessages) : null;
+  const flash =
+    sp.instagram === "connected"
+      ? sp.instagram_warning === "webhook"
+        ? { kind: "warning" as const, text: "Instagram connected, but Meta didn't confirm the webhook subscription. Check that the app is Live and webhooks are configured, then reconnect." }
+        : { kind: "success" as const, text: "Instagram connected." }
+      : errorReason && errorReason in oauthErrorMessages
+        ? { kind: "error" as const, text: oauthErrorMessages[errorReason] }
+        : null;
+  const base = appBaseUrl();
 
   return (
     <div className="space-y-6">
@@ -83,6 +104,28 @@ async function SettingsContent({ params }: { params: PageProps<"/w/[slug]/settin
           </p>
         </CardContent>
       </Card>
+
+      <InstagramCard
+        slug={ctx.workspaceSlug}
+        canManage={canEdit}
+        missingConfig={missingOAuthConfig()}
+        callbackUrl={base ? `${base}${WEBHOOK_PATH}` : null}
+        verifyTokenConfigured={Boolean(process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN?.trim())}
+        flash={flash}
+        connection={
+          ig
+            ? {
+                username: ig.username,
+                status: ig.status,
+                tokenExpiresAt: ig.tokenExpiresAt?.toISOString() ?? null,
+                grantedScopes: ig.grantedScopes,
+                webhookSubscribedAt: ig.webhookSubscribedAt?.toISOString() ?? null,
+                lastWebhookAt: ig.lastWebhookAt?.toISOString() ?? null,
+                lastError: ig.lastError,
+              }
+            : null
+        }
+      />
 
       <Card id="profile">
         <CardHeader>
