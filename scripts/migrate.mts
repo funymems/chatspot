@@ -6,12 +6,13 @@
  */
 import { closeDb, getDb } from "@/lib/server/db/client";
 import { migratePostgres } from "@/lib/server/db/migrate-postgres";
+import { resolveDatabaseUrl } from "@/lib/server/db/database-url";
 
-const url = process.env.DATABASE_URL?.trim();
+const url = resolveDatabaseUrl();
 
 if (!url) {
   if (process.env.VERCEL) {
-    console.error("DATABASE_URL is not set — refusing to deploy without a database. Add it in Vercel → Settings → Environment Variables.");
+    console.error("No database configured (DATABASE_URL or POSTGRES_URL) — refusing to deploy. Add it in Vercel → Settings → Environment Variables or connect the Supabase integration.");
     process.exit(1);
   }
   await getDb(); // PGlite migrates on open

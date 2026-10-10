@@ -9,6 +9,7 @@ import { Pool } from "pg";
 import * as schema from "./schema";
 import { logger } from "@/lib/server/logger";
 import { syncSystemTemplates } from "./bootstrap";
+import { resolveDatabaseUrl } from "./database-url";
 
 /**
  * Two interchangeable backends behind one `Database` type:
@@ -125,7 +126,7 @@ export function createPostgresDatabase(url: string): DbState {
 function state(): DbState {
   const g = globalThis as GlobalWithDb;
   if (!g[globalKey]) {
-    const url = process.env.DATABASE_URL?.trim();
+    const url = resolveDatabaseUrl();
     if (url) g[globalKey] = createPostgresDatabase(url);
     else if (process.env.VERCEL) {
       throw new Error(
