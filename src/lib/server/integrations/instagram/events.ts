@@ -22,7 +22,7 @@ const messagingItem = z
   .object({
     sender: z.object({ id }).partial().optional(),
     recipient: z.object({ id }).partial().optional(),
-    timestamp: z.number().optional(),
+    timestamp: z.union([z.number(), z.string().transform(Number)]).optional(),
     message: z
       .object({
         mid: z.string().optional(),
@@ -75,27 +75,44 @@ export type NormalizedIgEvent = {
 
 const digest = (v: unknown) => createHash("sha256").update(JSON.stringify(v)).digest("hex").slice(0, 32);
 
+const MESSAGING_FIELDS = new Set(["messages", "messaging_postbacks", "message_reactions", "messaging_seen", "messaging_referral", "message_edit"]);
+
+function normalizeMessaging(accountId: string, m: z.infer<typeof messagingItem>): NormalizedIgEvent {
+  const base = { accountId, senderId: m.sender?.id ?? null, timestamp: m.timestamp ?? null, text: null, attachments: 0 };
+  if (m.message) {
+    const kind = m.message.is_deleted ? "deleted" : m.message.is_echo ? "echo" : "message";
+    return {
+      ...base,
+      kind,
+      eventId: m.message.mid ? `msg:${m.message.mid}` : `msg:${digest(m)}`,
+      text: kind === "message" ? m.message.text ?? null : null,
+      attachments: m.message.attachments?.length ?? 0,
+    };
+  }
+  if (m.postback) return { ...base, kind: "postback", eventId: `pb:${m.postback.mid ?? digest(m)}`, text: m.postback.title ?? null };
+  if (m.reaction) return { ...base, kind: "reaction", eventId: `rx:${digest(m)}` };
+  if (m.read) return { ...base, kind: "read", eventId: `rd:${digest(m)}` };
+  if (m.referral) return { ...base, kind: "referral", eventId: `rf:${digest(m)}` };
+  return { ...base, kind: "unknown", eventId: `un:${digest(m)}` };
+}
+
+/**
+ * Real messaging notifications use `entry[].messaging[]`; the App Dashboard
+ * "Test" button (and some fields) use `entry[].changes[{ field, value }]`
+ * with the same messaging object as `value`. Both are accepted.
+ */
 export function normalizePayload(payload: WebhookPayload): NormalizedIgEvent[] {
   const out: NormalizedIgEvent[] = [];
   for (const entry of payload.entry) {
-    for (const m of entry.messaging ?? []) {
-      const base = { accountId: entry.id, senderId: m.sender?.id ?? null, timestamp: m.timestamp ?? null, text: null, attachments: 0 };
-      if (m.message) {
-        const kind = m.message.is_deleted ? "deleted" : m.message.is_echo ? "echo" : "message";
-        out.push({
-          ...base,
-          kind,
-          eventId: m.message.mid ? `msg:${m.message.mid}` : `msg:${digest(m)}`,
-          text: kind === "message" ? m.message.text ?? null : null,
-          attachments: m.message.attachments?.length ?? 0,
-        });
-      } else if (m.postback) out.push({ ...base, kind: "postback", eventId: `pb:${m.postback.mid ?? digest(m)}`, text: m.postback.title ?? null });
-      else if (m.reaction) out.push({ ...base, kind: "reaction", eventId: `rx:${digest(m)}` });
-      else if (m.read) out.push({ ...base, kind: "read", eventId: `rd:${digest(m)}` });
-      else if (m.referral) out.push({ ...base, kind: "referral", eventId: `rf:${digest(m)}` });
-      else out.push({ ...base, kind: "unknown", eventId: `un:${digest(m)}` });
-    }
+    for (const m of entry.messaging ?? []) out.push(normalizeMessaging(entry.id, m));
     for (const c of entry.changes ?? []) {
+      if (MESSAGING_FIELDS.has(c.field)) {
+        const parsed = messagingItem.safeParse(c.value ?? {});
+        if (parsed.success && (parsed.data.message || parsed.data.postback || parsed.data.reaction || parsed.data.read || parsed.data.referral)) {
+          out.push(normalizeMessaging(entry.id, parsed.data));
+          continue;
+        }
+      }
       const value = (c.value ?? {}) as { id?: unknown; from?: { id?: unknown } };
       out.push({
         accountId: entry.id,

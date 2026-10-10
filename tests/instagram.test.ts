@@ -300,6 +300,18 @@ describe("Instagram replies through automations", () => {
   });
 });
 
+describe("webhook payload formats", () => {
+  it("accepts the App Dashboard test format (changes[] with field messages)", async () => {
+    const body = JSON.stringify({
+      object: "instagram",
+      entry: [{ id: IG_ACCOUNT, time: 1760000000, changes: [{ field: "messages", value: { sender: { id: "4001" }, recipient: { id: IG_ACCOUNT }, timestamp: "1527459824", message: { mid: "m-changes", text: "from changes format" } } }] }],
+    });
+    expect((await receiveWebhook(body, sign(body))).status).toBe(200);
+    await processDueJobs(new Date());
+    expect(await db.select().from(messages).where(eq(messages.body, "from changes format"))).toHaveLength(1);
+  });
+});
+
 describe("webhook diagnostics", () => {
   it("records outcomes without message content and matches the token's user id too", async () => {
     const bad = dm("m-diag-bad", "secret text");
