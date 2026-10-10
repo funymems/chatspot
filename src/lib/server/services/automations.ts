@@ -1,5 +1,4 @@
 import "server-only";
-import { createHash } from "node:crypto";
 import { and, desc, eq, ilike, inArray, max, or, sql } from "drizzle-orm";
 import { getDb } from "@/lib/server/db/client";
 import { aiAgents, automationExecutions, automationVersions, automations } from "@/lib/server/db/schema";
@@ -8,7 +7,7 @@ import { AppError, conflict, notFound } from "@/lib/server/errors";
 import { automationGraph, type AutomationGraph } from "@/lib/domain/graph/schema";
 import { triggerSummary, validateGraph, type ValidationResult } from "@/lib/domain/graph/validate";
 import { defaultGraph } from "@/lib/domain/graph/builder";
-import { stableStringify } from "@/lib/domain/stable-hash";
+import { hashGraph, snapshotGraphVersion } from "@/lib/server/engine/snapshots";
 import { recordActivity } from "./activity";
 
 export type AutomationStatus = (typeof automations.$inferSelect)["status"];
@@ -28,7 +27,7 @@ export type AutomationListItem = {
   lastRunAt: Date | null;
 };
 
-export const hashGraph = (graph: unknown) => createHash("sha256").update(stableStringify(graph)).digest("hex");
+export { hashGraph };
 
 /** Parses the structural shape of a graph (configs may still be incomplete in a draft). */
 function parseGraph(graph: unknown): AutomationGraph {
@@ -227,33 +226,13 @@ export async function validateAutomation(ctx: WorkspaceContext, id: string): Pro
   return validateGraph(row.graph, await referenceContext(ctx, id));
 }
 
-/** Creates an immutable version for a graph, reusing an identical existing one. */
 export async function snapshotVersion(
   ctx: WorkspaceContext,
   automationId: string,
   graph: AutomationGraph,
   source: "publish" | "test" | "snapshot",
 ) {
-  const db = await getDb();
-  const contentHash = hashGraph(graph);
-  return db.transaction(async (tx) => {
-    const [same] = await tx
-      .select()
-      .from(automationVersions)
-      .where(and(eq(automationVersions.automationId, automationId), eq(automationVersions.contentHash, contentHash)))
-      .orderBy(desc(automationVersions.version))
-      .limit(1);
-    if (same) return same;
-    const [{ next } = { next: 1 }] = await tx
-      .select({ next: sql<number>`coalesce(max(${automationVersions.version}), 0)::int + 1` })
-      .from(automationVersions)
-      .where(eq(automationVersions.automationId, automationId));
-    const [created] = await tx
-      .insert(automationVersions)
-      .values({ workspaceId: ctx.workspaceId, automationId, version: next, graph, contentHash, source, createdBy: ctx.userId })
-      .returning();
-    return created!;
-  });
+  return snapshotGraphVersion({ workspaceId: ctx.workspaceId, automationId, graph, source, userId: ctx.userId });
 }
 
 /**
