@@ -6,6 +6,7 @@ import { drizzle, type PgliteDatabase } from "drizzle-orm/pglite";
 import { migrate } from "drizzle-orm/pglite/migrator";
 import * as schema from "./schema";
 import { logger } from "@/lib/server/logger";
+import { syncSystemTemplates } from "./bootstrap";
 
 /**
  * Phase-1 persistence: an embedded Postgres (PGlite) persisted to ./.data.
@@ -73,9 +74,10 @@ export function createDatabase(dataDir: string): DbState {
   const client = new PGlite(dataDir);
   const db = drizzle({ client, schema, casing: "snake_case" });
   const ready = (async () => {
-    const started = Date.now();
+    const started = performance.now();
     await migrate(db, { migrationsFolder: path.resolve(process.cwd(), "drizzle") });
-    logger.info("db.ready", { dataDir: inMemory ? dataDir : path.relative(process.cwd(), dataDir), ms: Date.now() - started });
+    await syncSystemTemplates(db);
+    logger.info("db.ready", { dataDir: inMemory ? dataDir : path.relative(process.cwd(), dataDir), ms: Math.round(performance.now() - started) });
   })();
   return { db, client, ready };
 }

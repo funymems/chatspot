@@ -174,3 +174,11 @@ Choice: **`claude-haiku-5-5`** through the official `@anthropic-ai/sdk`. It's at
 - Sections for later stages show an explicit "not built yet / stage N" state with no actions.
 - Checks: `tsc` strict, ESLint, 8 Vitest tests (auth, cross-workspace isolation, role checks, FTS index on EN/RU), `next build`.
 - Note: PGlite runs in-process, so render-time data access must follow `connection()`, which `getOptionalUser`/`requireUser` already call.
+
+### Stage 3: done (2026-10-10)
+- Graph format v1 (`src/lib/domain/graph/schema.ts`): Zod configs for all 7 node types, handles, settings.
+- Validator (`validate.ts`): one trigger, at least one reachable End, handle/edge integrity, required outputs (both condition branches), notes never connected, unreachable-node warnings, Tarjan cycle detection (a loop without a wait is an error), per-node config errors with field paths, workspace reference checks (agents, redirect targets).
+- 8 built-in templates (one per category), synced into `templates` on every boot. Tests verify each one is valid.
+- Automations service: list with search and status filter plus run stats, create (scratch or template), edit details, optimistic-concurrency graph save, duplicate, delete, activate (validates, then publishes an immutable content-hashed version, reusing identical ones), deactivate. "Unpublished changes" is detected by hash.
+- UI: automations list (URL-backed search and filters, row menu, delete confirmation), create dialog (scratch / template / AI marked as stage 6), detail page (read-only React Flow preview, validation panel, details form, publishing info), dashboard with KPIs computed from the DB, performance, activity, conversations, quick actions, onboarding checklist.
+- Checks: 35 tests (graph validator, all templates, automation lifecycle, cross-workspace isolation, dashboard metrics), tsc, ESLint, verified in the browser.
