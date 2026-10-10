@@ -7,7 +7,7 @@ import { channelConnections, contacts, conversations, messages } from "@/lib/ser
 import { registerUser } from "@/lib/server/services/accounts";
 import { resolveWorkspaceAccess } from "@/lib/server/services/workspaces";
 import { completeInstagramOAuth, startInstagramConnect } from "@/lib/server/integrations/instagram/oauth";
-import { disconnectInstagram, getInstagramConnection, refreshInstagramTokens, setInstagramAutoReply } from "@/lib/server/integrations/instagram/connections";
+import { disconnectInstagram, getInstagramConnection, refreshInstagramTokens, setInstagramAutoReply, getWebhookDiagnostics } from "@/lib/server/integrations/instagram/connections";
 import { activateAutomation, createAutomation } from "@/lib/server/services/automations";
 import { createAutomationFromTemplate, listTemplates } from "@/lib/server/services/templates";
 import { sendHumanReply } from "@/lib/server/services/inbox";
@@ -297,6 +297,25 @@ describe("Instagram replies through automations", () => {
     await db.update(messages).set({ createdAt: new Date(Date.now() - 25 * 3_600_000) }).where(eq(messages.conversationId, conv!.id));
     await expect(sendHumanReply(ctx, conv!.id, "late reply")).rejects.toMatchObject({ message: expect.stringContaining("24-hour") });
     await setInstagramAutoReply(ctx, false);
+  });
+});
+
+describe("webhook diagnostics", () => {
+  it("records outcomes without message content and matches the token's user id too", async () => {
+    const bad = dm("m-diag-bad", "secret text");
+    await receiveWebhook(bad, sign(bad, "wrong"));
+    // entry.id = app-scoped user id from the token exchange ("111") instead of the account id
+    const alt = JSON.stringify({ object: "instagram", entry: [{ id: "111", messaging: [{ sender: { id: "3001" }, message: { mid: "m-diag-alt", text: "via user id" } }] }] });
+    expect((await receiveWebhook(alt, sign(alt))).status).toBe(200);
+    await processDueJobs(new Date());
+    expect(await db.select().from(messages).where(eq(messages.body, "via user id"))).toHaveLength(1);
+
+    const d = await getWebhookDiagnostics(ctx);
+    const outcomes = d.receipts.map((r) => r.outcome);
+    expect(outcomes).toEqual(expect.arrayContaining(["bad_signature", "accepted"]));
+    expect(JSON.stringify(d)).not.toContain("secret text");
+    // another workspace with no connection sees nothing about this account
+    expect((await getWebhookDiagnostics(other)).receipts.every((r) => !r.mine)).toBe(true);
   });
 });
 

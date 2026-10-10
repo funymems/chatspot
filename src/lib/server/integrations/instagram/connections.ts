@@ -1,7 +1,7 @@
 import "server-only";
-import { and, eq, isNotNull, lt } from "drizzle-orm";
+import { and, desc, eq, isNotNull, lt } from "drizzle-orm";
 import { getDb } from "@/lib/server/db/client";
-import { channelConnections } from "@/lib/server/db/schema";
+import { channelConnections, webhookReceipts } from "@/lib/server/db/schema";
 import type { WorkspaceContext } from "@/lib/server/auth/context";
 import { assertRole } from "@/lib/server/services/workspaces";
 import { notFound } from "@/lib/server/errors";
@@ -147,3 +147,59 @@ export async function maybeRefreshInstagramTokens() {
   await refreshInstagramTokens();
 }
 
+
+export type WebhookReceiptView = {
+  receivedAt: Date;
+  outcome: string;
+  httpStatus: number;
+  eventKinds: string[];
+  eventCount: number;
+  /** True when the event claims this workspace's account. */
+  mine: boolean;
+  /** Last digits of a foreign/unknown account id (never the full id of another account). */
+  idHint: string | null;
+};
+
+/**
+ * Recent webhook deliveries for diagnostics. Shows full detail for this
+ * workspace's account and only a short hint for deliveries that match no
+ * connected account (e.g. an id mismatch or an unconnected account).
+ */
+export async function getWebhookDiagnostics(ctx: WorkspaceContext) {
+  const conn = await getInstagramConnection(ctx);
+  const db = await getDb();
+  const ownIds = new Set<string>();
+  if (conn) {
+    ownIds.add(conn.accountId);
+    const [row] = await db
+      .select({ userId: channelConnections.providerUserId })
+      .from(channelConnections)
+      .where(and(eq(channelConnections.workspaceId, ctx.workspaceId), eq(channelConnections.provider, "instagram")))
+      .limit(1);
+    if (row?.userId) ownIds.add(row.userId);
+  }
+  const allConnected = new Set(
+    (await db.select({ a: channelConnections.providerAccountId, u: channelConnections.providerUserId }).from(channelConnections).where(eq(channelConnections.provider, "instagram")))
+      .flatMap((r) => [r.a, r.u])
+      .filter((x): x is string => Boolean(x)),
+  );
+  const rows = await db.select().from(webhookReceipts).where(eq(webhookReceipts.provider, "instagram")).orderBy(desc(webhookReceipts.receivedAt)).limit(50);
+  const out: WebhookReceiptView[] = [];
+  for (const r of rows) {
+    const ids = r.accountIds;
+    const mine = ids.some((id) => ownIds.has(id));
+    const unowned = ids.length === 0 || ids.every((id) => !allConnected.has(id));
+    if (!mine && !unowned) continue; // another workspace's account: not shown
+    out.push({
+      receivedAt: r.receivedAt,
+      outcome: r.outcome,
+      httpStatus: r.httpStatus,
+      eventKinds: r.eventKinds,
+      eventCount: r.eventCount,
+      mine,
+      idHint: mine ? null : ids[0] ? `…${ids[0].slice(-4)}` : null,
+    });
+    if (out.length >= 10) break;
+  }
+  return { ownIdHints: [...ownIds].map((id) => `…${id.slice(-4)}`), receipts: out };
+}

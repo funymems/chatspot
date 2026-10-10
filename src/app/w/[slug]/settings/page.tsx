@@ -10,7 +10,7 @@ import { hasRole } from "@/lib/server/auth/context";
 import { listMembers } from "@/lib/server/services/workspaces";
 import { ProfileForm, WorkspaceForm } from "./settings-forms";
 import { InstagramCard } from "@/components/integrations/instagram-card";
-import { getInstagramConnection } from "@/lib/server/integrations/instagram/connections";
+import { getInstagramConnection, getWebhookDiagnostics } from "@/lib/server/integrations/instagram/connections";
 import { oauthErrorMessages } from "@/lib/server/integrations/instagram/oauth";
 import { WEBHOOK_PATH, appBaseUrl, missingOAuthConfig } from "@/lib/server/integrations/instagram/config";
 
@@ -49,6 +49,7 @@ async function SettingsContent({
         ? { kind: "error" as const, text: oauthErrorMessages[errorReason] }
         : null;
   const base = appBaseUrl();
+  const diag = canEdit && ig ? await getWebhookDiagnostics(ctx) : null;
 
   return (
     <div className="space-y-6">
@@ -112,6 +113,9 @@ async function SettingsContent({
         callbackUrl={base ? `${base}${WEBHOOK_PATH}` : null}
         verifyTokenConfigured={Boolean(process.env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN?.trim())}
         flash={flash}
+        diagnostics={
+          diag ? { ownIdHints: diag.ownIdHints, receipts: diag.receipts.map((r) => ({ ...r, receivedAt: r.receivedAt.toISOString() })) } : null
+        }
         connection={
           ig
             ? {

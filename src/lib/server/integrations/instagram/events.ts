@@ -1,5 +1,5 @@
 import "server-only";
-import { and, eq, ne } from "drizzle-orm";
+import { and, eq, ne, or } from "drizzle-orm";
 import { z } from "zod";
 import { getDb } from "@/lib/server/db/client";
 import { channelConnections, contacts, conversations } from "@/lib/server/db/schema";
@@ -133,7 +133,14 @@ export async function processInstagramEvents(events: NormalizedIgEvent[]) {
           token: channelConnections.accessTokenEncrypted,
         })
         .from(channelConnections)
-        .where(and(eq(channelConnections.provider, "instagram"), eq(channelConnections.providerAccountId, ev.accountId), ne(channelConnections.status, "disconnected")))
+        .where(
+          and(
+            eq(channelConnections.provider, "instagram"),
+            // entry[].id is documented as the professional account id; accept the token's user id too.
+            or(eq(channelConnections.providerAccountId, ev.accountId), eq(channelConnections.providerUserId, ev.accountId)),
+            ne(channelConnections.status, "disconnected"),
+          ),
+        )
         .limit(1);
       conn = row ?? null;
       connectionCache.set(ev.accountId, conn);

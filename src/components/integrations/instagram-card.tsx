@@ -37,6 +37,24 @@ export type InstagramCardProps = {
     autoReplyEnabled: boolean;
   } | null;
   flash: { kind: "success" | "error" | "warning"; text: string } | null;
+  diagnostics: {
+    ownIdHints: string[];
+    receipts: { receivedAt: string; outcome: string; httpStatus: number; eventKinds: string[]; eventCount: number; mine: boolean; idHint: string | null }[];
+  } | null;
+};
+
+const outcomeText: Record<string, { label: string; tone: "ok" | "bad" | "warn"; help?: string }> = {
+  accepted: { label: "Accepted", tone: "ok", help: "Saved to Conversations (echoes of your own messages are ignored)." },
+  bad_signature: {
+    label: "Rejected: invalid signature",
+    tone: "bad",
+    help: "Meta signed with a secret the server doesn't have. Add META_APP_SECRET in Vercel (App settings → Basic → App secret) and redeploy.",
+  },
+  unknown_account: { label: "Ignored: account not connected", tone: "warn", help: "The event is for an Instagram account ID that isn't connected to any workspace." },
+  not_configured: { label: "Rejected: server not configured", tone: "bad", help: "INSTAGRAM_APP_SECRET is missing on the server." },
+  invalid_json: { label: "Rejected: invalid JSON", tone: "bad" },
+  invalid_payload: { label: "Rejected: unexpected payload", tone: "bad" },
+  ignored_object: { label: "Ignored: not an Instagram event", tone: "warn" },
 };
 
 function InstagramGlyph({ className }: { className?: string }) {
@@ -160,6 +178,39 @@ export function InstagramCard(p: InstagramCardProps) {
           </div>
         ) : (
           <p className="text-xs text-muted-foreground">Only workspace owners and admins can manage integrations.</p>
+        )}
+
+        {p.diagnostics && c && (
+          <details className="rounded-lg border p-3 text-sm" open={p.diagnostics.receipts.some((r) => r.outcome !== "accepted")}>
+            <summary className="cursor-pointer font-medium">Recent webhook deliveries</summary>
+            <div className="mt-3 space-y-2 text-xs">
+              {p.diagnostics.receipts.length === 0 ? (
+                <div className="space-y-1 text-muted-foreground">
+                  <p className="font-medium text-amber-700">No requests from Meta have reached the server yet.</p>
+                  <p>Check in the Meta App Dashboard: the app is in Live mode, the webhook “messages” field is subscribed, and the account you message from isn&apos;t the connected account itself. In development mode, the sender also needs a role in the app.</p>
+                </div>
+              ) : (
+                <ul className="divide-y rounded-md border">
+                  {p.diagnostics.receipts.map((r, i) => {
+                    const o = outcomeText[r.outcome] ?? { label: r.outcome, tone: "warn" as const };
+                    return (
+                      <li key={i} className="space-y-0.5 p-2">
+                        <p className="flex flex-wrap items-center gap-2">
+                          <span className={cn("font-medium", o.tone === "ok" ? "text-success" : o.tone === "bad" ? "text-destructive" : "text-amber-700")}>{o.label}</span>
+                          <span className="text-muted-foreground">HTTP {r.httpStatus}</span>
+                          {r.eventCount > 0 && <span className="text-muted-foreground">· {r.eventKinds.join(", ")}</span>}
+                          {r.idHint && <span className="text-muted-foreground">· account {r.idHint}</span>}
+                          <RelativeTime date={r.receivedAt} className="ml-auto text-muted-foreground" />
+                        </p>
+                        {o.help && <p className="text-muted-foreground">{o.help}</p>}
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+              <p className="text-muted-foreground">Connected account IDs: {p.diagnostics.ownIdHints.join(", ") || "—"}. Message text is never stored here.</p>
+            </div>
+          </details>
         )}
 
         <details className="rounded-lg border p-3 text-sm">

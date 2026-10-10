@@ -645,3 +645,24 @@ export const oauthStates = pgTable(
   },
   (t) => [index("oauth_states_expires_idx").on(t.expiresAt)],
 );
+
+/**
+ * Diagnostics for incoming webhook requests (no message content): lets the
+ * workspace see whether Meta's deliveries arrive and why one was rejected.
+ */
+export const webhookReceipts = pgTable(
+  "webhook_receipts",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    provider: text("provider").notNull(),
+    receivedAt: ts("received_at").notNull().defaultNow(),
+    httpStatus: integer("http_status").notNull(),
+    /** accepted | bad_signature | invalid_json | invalid_payload | ignored_object | unknown_account | not_configured */
+    outcome: text("outcome").notNull(),
+    /** entry[].id values claimed by the payload (unverified when the signature failed). */
+    accountIds: jsonb("account_ids").$type<string[]>().notNull().default([]),
+    eventCount: integer("event_count").notNull().default(0),
+    eventKinds: jsonb("event_kinds").$type<string[]>().notNull().default([]),
+  },
+  (t) => [index("webhook_receipts_provider_time_idx").on(t.provider, t.receivedAt)],
+);
