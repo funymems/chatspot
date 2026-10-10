@@ -15,6 +15,13 @@
       "when": 1791635101773,
       "tag": "0001_instagram_integration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791639138691,
+      "tag": "0002_instagram_auto_reply",
+      "breakpoints": true
     }
   ]
 }

@@ -21,6 +21,7 @@ export type InstagramConnectionView = {
   webhookSubscribedAt: Date | null;
   lastWebhookAt: Date | null;
   lastError: string | null;
+  autoReplyEnabled: boolean;
   createdAt: Date;
 };
 
@@ -34,6 +35,7 @@ const safeColumns = {
   webhookSubscribedAt: channelConnections.webhookSubscribedAt,
   lastWebhookAt: channelConnections.lastWebhookAt,
   lastError: channelConnections.lastError,
+  autoReplyEnabled: channelConnections.autoReplyEnabled,
   createdAt: channelConnections.createdAt,
 };
 
@@ -56,6 +58,23 @@ export async function disconnectInstagram(ctx: WorkspaceContext) {
     .returning({ username: channelConnections.username });
   if (!row) throw notFound("Instagram connection");
   await recordActivity(ctx, { type: "integration.disconnected", summary: `Instagram account @${row.username} disconnected`, entityType: "integration" });
+}
+
+/** Opt-in switch: run automations on incoming Instagram DMs and reply through Instagram. */
+export async function setInstagramAutoReply(ctx: WorkspaceContext, enabled: boolean) {
+  assertRole(ctx, "admin");
+  const db = await getDb();
+  const [row] = await db
+    .update(channelConnections)
+    .set({ autoReplyEnabled: enabled, updatedAt: new Date() })
+    .where(and(eq(channelConnections.workspaceId, ctx.workspaceId), eq(channelConnections.provider, "instagram")))
+    .returning({ username: channelConnections.username });
+  if (!row) throw notFound("Instagram connection");
+  await recordActivity(ctx, {
+    type: enabled ? "integration.autoreply_on" : "integration.autoreply_off",
+    summary: `Instagram auto-replies ${enabled ? "enabled" : "disabled"} for @${row.username}`,
+    entityType: "integration",
+  });
 }
 
 /** Server-only: decrypted token for API calls. Never pass the result to client code. */

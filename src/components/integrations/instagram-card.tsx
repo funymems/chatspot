@@ -16,7 +16,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RelativeTime } from "@/components/common/relative-time";
-import { disconnectInstagramAction, startInstagramConnectAction } from "@/app/actions/integrations";
+import { disconnectInstagramAction, setInstagramAutoReplyAction, startInstagramConnectAction } from "@/app/actions/integrations";
+import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
 export type InstagramCardProps = {
@@ -33,6 +34,7 @@ export type InstagramCardProps = {
     webhookSubscribedAt: string | null;
     lastWebhookAt: string | null;
     lastError: string | null;
+    autoReplyEnabled: boolean;
   } | null;
   flash: { kind: "success" | "error" | "warning"; text: string } | null;
 };
@@ -113,9 +115,26 @@ export function InstagramCard(p: InstagramCardProps) {
                 <AlertTriangle className="mt-0.5 size-3.5 shrink-0" /> {c.lastError}
               </p>
             )}
-            <p className="text-xs text-muted-foreground">
-              Incoming DMs appear in Conversations. Replies and automations through Instagram are not enabled yet.
-            </p>
+            <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/30 p-2.5">
+              <span className="text-xs">
+                <span className="block text-sm font-medium">Auto-replies</span>
+                {c.autoReplyEnabled
+                  ? "On — active automations answer incoming DMs through Instagram (within Meta's 24-hour window)."
+                  : "Off — DMs arrive in Conversations only; nothing is sent automatically."}
+              </span>
+              <Switch
+                checked={c.autoReplyEnabled}
+                disabled={!p.canManage || pending || c.status !== "active"}
+                aria-label="Instagram auto-replies"
+                onCheckedChange={(v) =>
+                  start(async () => {
+                    const res = await setInstagramAutoReplyAction(p.slug, v);
+                    if (res.ok) toast.success(res.message);
+                    else toast.error(res.error);
+                  })
+                }
+              />
+            </div>
           </div>
         ) : (
           <p className="text-sm text-muted-foreground">No Instagram account connected.</p>

@@ -116,29 +116,40 @@ export async function handleInboundMessage(input: {
   }
   await storeInboundMessage(input.workspaceId, input.conversationId, input.contactId, input.text, { eventId: input.externalEventId });
 
+  const res = await dispatchInboundToAutomations({ ...input, inboundEventId: event.id });
+  await markEventProcessed(event.id);
+  return { duplicate: false as const, ...res };
+}
+
+/**
+ * Routes an already-stored inbound message: resume a run waiting for this
+ * conversation's reply, otherwise start the best matching active automation.
+ */
+export async function dispatchInboundToAutomations(input: {
+  workspaceId: string;
+  conversationId: string;
+  contactId: string | null;
+  text: string;
+  inboundEventId: string | null;
+}) {
   const waiting = await findWaitingForReply(input.workspaceId, input.conversationId);
   if (waiting) {
     const execution = await resumeWithReply(waiting.id, input.text);
-    await markEventProcessed(event.id);
-    return { duplicate: false as const, execution, resumed: true };
+    return { execution, resumed: true };
   }
-
   const match = await findMatchingAutomation(input.workspaceId, input.text);
-  let execution = null;
-  if (match) {
-    execution = await startExecution({
-      workspaceId: input.workspaceId,
-      automationId: match.automationId,
-      versionId: match.versionId,
-      conversationId: input.conversationId,
-      contactId: input.contactId,
-      mode: "live",
-      input: { text: input.text, source: "inbound" },
-      inboundEventId: event.id,
-    });
-  }
-  await markEventProcessed(event.id);
-  return { duplicate: false as const, execution, resumed: false };
+  if (!match) return { execution: null, resumed: false };
+  const execution = await startExecution({
+    workspaceId: input.workspaceId,
+    automationId: match.automationId,
+    versionId: match.versionId,
+    conversationId: input.conversationId,
+    contactId: input.contactId,
+    mode: "live",
+    input: { text: input.text, source: "inbound" },
+    inboundEventId: input.inboundEventId,
+  });
+  return { execution, resumed: false };
 }
 
 export async function findMatchingAutomation(workspaceId: string, text: string) {

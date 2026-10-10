@@ -4,7 +4,9 @@ import { z } from "zod";
 import { getDb } from "@/lib/server/db/client";
 import { channelConnections, contacts, conversations } from "@/lib/server/db/schema";
 import { logger } from "@/lib/server/logger";
-import { markEventProcessed, recordInboundEvent, storeInboundMessage } from "@/lib/server/engine/events";
+import { dispatchInboundToAutomations, markEventProcessed, recordInboundEvent, storeInboundMessage } from "@/lib/server/engine/events";
+import { decryptSecret } from "@/lib/server/integrations/token-crypto";
+import { getMessagingUserProfile } from "./api";
 import { createHash } from "node:crypto";
 
 /**
@@ -117,13 +119,19 @@ export function normalizePayload(payload: WebhookPayload): NormalizedIgEvent[] {
  */
 export async function processInstagramEvents(events: NormalizedIgEvent[]) {
   const db = await getDb();
-  const connectionCache = new Map<string, { id: string; workspaceId: string } | null>();
+  const connectionCache = new Map<string, { id: string; workspaceId: string; autoReply: boolean; token: string | null } | null>();
   let stored = 0;
+  let dispatched = 0;
   for (const ev of events) {
     let conn = connectionCache.get(ev.accountId);
     if (conn === undefined) {
       const [row] = await db
-        .select({ id: channelConnections.id, workspaceId: channelConnections.workspaceId })
+        .select({
+          id: channelConnections.id,
+          workspaceId: channelConnections.workspaceId,
+          autoReply: channelConnections.autoReplyEnabled,
+          token: channelConnections.accessTokenEncrypted,
+        })
         .from(channelConnections)
         .where(and(eq(channelConnections.provider, "instagram"), eq(channelConnections.providerAccountId, ev.accountId), ne(channelConnections.status, "disconnected")))
         .limit(1);
@@ -147,18 +155,27 @@ export async function processInstagramEvents(events: NormalizedIgEvent[]) {
     if (rec.duplicate) continue;
 
     if (ev.kind === "message" && ev.senderId && ev.senderId !== ev.accountId) {
-      const { contactId, conversationId } = await ensureInstagramThread(conn.workspaceId, ev.senderId);
+      const { contactId, conversationId } = await ensureInstagramThread(conn.workspaceId, ev.senderId, conn.token);
       const body = ev.text ?? (ev.attachments ? `[${ev.attachments} attachment${ev.attachments === 1 ? "" : "s"}]` : "[unsupported message]");
       await storeInboundMessage(conn.workspaceId, conversationId, contactId, body, { eventId: ev.eventId, channel: "instagram" });
       stored++;
+      // Automations reply only when the workspace explicitly enabled it (Settings → Instagram).
+      if (conn.autoReply && ev.text) {
+        try {
+          const res = await dispatchInboundToAutomations({ workspaceId: conn.workspaceId, conversationId, contactId, text: ev.text, inboundEventId: rec.id });
+          if (res.execution) dispatched++;
+        } catch (err) {
+          logger.error("instagram.automation_failed", { workspaceId: conn.workspaceId, err });
+        }
+      }
     }
     await markEventProcessed(rec.id);
   }
-  logger.info("instagram.webhook.processed", { events: events.length, storedMessages: stored });
-  return { stored };
+  logger.info("instagram.webhook.processed", { events: events.length, storedMessages: stored, automationRuns: dispatched });
+  return { stored, dispatched };
 }
 
-async function ensureInstagramThread(workspaceId: string, igsid: string) {
+async function ensureInstagramThread(workspaceId: string, igsid: string, encryptedToken: string | null) {
   const db = await getDb();
   let [contact] = await db
     .select({ id: contacts.id })
@@ -166,9 +183,28 @@ async function ensureInstagramThread(workspaceId: string, igsid: string) {
     .where(and(eq(contacts.workspaceId, workspaceId), eq(contacts.source, "instagram"), eq(contacts.channelUserId, igsid)))
     .limit(1);
   if (!contact) {
+    // The User Profile API works once the person has messaged the account (consent); fall back gracefully.
+    let name = "";
+    let username = "";
+    if (encryptedToken) {
+      try {
+        ({ name, username } = await getMessagingUserProfile(decryptSecret(encryptedToken), igsid));
+      } catch {
+        logger.info("instagram.profile_unavailable", { workspaceId });
+      }
+    }
+    const display = name || username;
+    const [first, ...rest] = display ? display.split(/\s+/) : ["Instagram user"];
     [contact] = await db
       .insert(contacts)
-      .values({ workspaceId, firstName: "Instagram user", lastName: igsid.slice(-4), source: "instagram", channelUserId: igsid })
+      .values({
+        workspaceId,
+        firstName: first ?? "Instagram user",
+        lastName: display ? rest.join(" ") : igsid.slice(-4),
+        source: "instagram",
+        channelUserId: igsid,
+        customFields: username ? { instagram_username: username } : {},
+      })
       .returning({ id: contacts.id });
   }
   let [conv] = await db

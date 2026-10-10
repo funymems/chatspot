@@ -615,6 +615,8 @@ export const channelConnections = pgTable(
     webhookSubscribedAt: ts("webhook_subscribed_at"),
     lastWebhookAt: ts("last_webhook_at"),
     lastError: text("last_error"),
+    /** Explicit opt-in: run automations on incoming messages and reply through the channel. */
+    autoReplyEnabled: boolean("auto_reply_enabled").notNull().default(false),
     connectedBy: uuid("connected_by").references(() => users.id, { onDelete: "set null" }),
     createdAt: createdAt(),
     updatedAt: updatedAt(),

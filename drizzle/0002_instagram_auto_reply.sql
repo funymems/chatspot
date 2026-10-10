@@ -1,0 +1,1 @@
+ALTER TABLE "channel_connections" ADD COLUMN "auto_reply_enabled" boolean DEFAULT false NOT NULL;

@@ -122,6 +122,7 @@ async function SettingsContent({
                 webhookSubscribedAt: ig.webhookSubscribedAt?.toISOString() ?? null,
                 lastWebhookAt: ig.lastWebhookAt?.toISOString() ?? null,
                 lastError: ig.lastError,
+                autoReplyEnabled: ig.autoReplyEnabled,
               }
             : null
         }

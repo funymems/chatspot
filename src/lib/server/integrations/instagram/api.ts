@@ -110,3 +110,45 @@ export async function subscribeWebhooks(cfg: InstagramConfig, token: string, fie
   const body = (await call(url, { method: "POST" }, "Webhook subscription")) as { success?: boolean } | null;
   if (!body?.success) throw new InstagramApiError("Webhook subscription was not confirmed by Meta", 502, "bad_response");
 }
+
+export const graphVersion = () => process.env.INSTAGRAM_GRAPH_VERSION?.trim() || "v25.0";
+
+export type IgOutgoing =
+  | { kind: "text"; text: string; quickReplies?: { title: string; payload: string }[] }
+  | { kind: "buttons"; text: string; buttons: { title: string; url: string }[] };
+
+/** POST /me/messages (Instagram API with Instagram Login). Returns Meta's message id. */
+export async function sendInstagramMessage(token: string, recipientIgsid: string, out: IgOutgoing): Promise<{ messageId: string }> {
+  const message =
+    out.kind === "buttons"
+      ? {
+          attachment: {
+            type: "template",
+            payload: { template_type: "button", text: out.text, buttons: out.buttons.map((b) => ({ type: "web_url", url: b.url, title: b.title })) },
+          },
+        }
+      : {
+          text: out.text,
+          ...(out.quickReplies?.length ? { quick_replies: out.quickReplies.map((q) => ({ content_type: "text", title: q.title, payload: q.payload })) } : {}),
+        };
+  const body = await call(
+    `${IG_GRAPH_BASE}/${graphVersion()}/me/messages`,
+    {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ recipient: { id: recipientIgsid }, message }),
+    },
+    "Send message",
+  );
+  const parsed = z.object({ message_id: z.string() }).loose().safeParse(body);
+  if (!parsed.success) throw new InstagramApiError("Send message returned an unexpected response", 502, "bad_response");
+  return { messageId: parsed.data.message_id };
+}
+
+/** User Profile API: available once the user has messaged the account. */
+export async function getMessagingUserProfile(token: string, igsid: string): Promise<{ name: string; username: string }> {
+  const url = `${IG_GRAPH_BASE}/${graphVersion()}/${encodeURIComponent(igsid)}?${new URLSearchParams({ fields: "name,username", access_token: token })}`;
+  const parsed = z.object({ name: z.string().optional(), username: z.string().optional() }).loose().safeParse(await call(url, { method: "GET" }, "Profile lookup"));
+  if (!parsed.success) throw new InstagramApiError("Profile lookup returned an unexpected response", 502, "bad_response");
+  return { name: parsed.data.name ?? "", username: parsed.data.username ?? "" };
+}

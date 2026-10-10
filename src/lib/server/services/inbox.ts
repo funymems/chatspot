@@ -192,6 +192,8 @@ export async function discardPreview(ctx: WorkspaceContext, conversationId: stri
  */
 export async function simulateInbound(ctx: WorkspaceContext, id: string, text: string, eventId: string = randomUUID()) {
   const conv = await getOwned(ctx, id);
+  // Never fake customer messages in a real channel: that would trigger real replies to a real person.
+  if (conv.channel !== "mock") throw validationError("Simulated messages are only available in demo-channel conversations");
   return handleInboundMessage({ workspaceId: ctx.workspaceId, conversationId: id, contactId: conv.contactId, channel: conv.channel, externalEventId: eventId, text });
 }
 

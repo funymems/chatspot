@@ -7,7 +7,10 @@ import { channelConnections, contacts, conversations, messages } from "@/lib/ser
 import { registerUser } from "@/lib/server/services/accounts";
 import { resolveWorkspaceAccess } from "@/lib/server/services/workspaces";
 import { completeInstagramOAuth, startInstagramConnect } from "@/lib/server/integrations/instagram/oauth";
-import { disconnectInstagram, getInstagramConnection, refreshInstagramTokens } from "@/lib/server/integrations/instagram/connections";
+import { disconnectInstagram, getInstagramConnection, refreshInstagramTokens, setInstagramAutoReply } from "@/lib/server/integrations/instagram/connections";
+import { activateAutomation, createAutomation } from "@/lib/server/services/automations";
+import { createAutomationFromTemplate, listTemplates } from "@/lib/server/services/templates";
+import { sendHumanReply } from "@/lib/server/services/inbox";
 import { isValidSignature, receiveWebhook, verifySubscription } from "@/lib/server/integrations/instagram/webhook";
 import { decryptSecret } from "@/lib/server/integrations/token-crypto";
 import { processDueJobs } from "@/lib/server/jobs/worker";
@@ -43,6 +46,8 @@ afterEach(() => {
 });
 
 /** Mocks the four Meta calls of a successful connection. */
+const sentBodies: { recipient: { id: string }; message: Record<string, unknown> }[] = [];
+
 function mockMeta(opts: { accountId?: string; failExchange?: boolean; subscribeOk?: boolean } = {}) {
   const calls: string[] = [];
   vi.stubGlobal(
@@ -57,6 +62,11 @@ function mockMeta(opts: { accountId?: string; failExchange?: boolean; subscribeO
       }
       if (url.startsWith("https://graph.instagram.com/access_token")) return json({ access_token: "LONG-TOKEN", token_type: "bearer", expires_in: 5183944 });
       if (url.startsWith("https://graph.instagram.com/refresh_access_token")) return json({ access_token: "REFRESHED-TOKEN", token_type: "bearer", expires_in: 5183944 });
+      if (url.includes("/me/messages")) {
+        sentBodies.push(JSON.parse(String(init?.body)));
+        return json({ recipient_id: "x", message_id: `mid.out.${sentBodies.length}` });
+      }
+      if (/\/v25\.0\/\d+\?fields=name/.test(url)) return json({ name: "Dana Bek", username: "dana.bek" });
       if (url.includes("/me/subscribed_apps")) return opts.subscribeOk === false ? json({ error: { message: "App not live" } }, 400) : json({ success: true });
       if (url.includes("/me?")) return json({ user_id: opts.accountId ?? IG_ACCOUNT, username: "bloom.studio", id: "111" });
       return json({ error: { message: "unexpected" } }, 404);
@@ -229,6 +239,64 @@ describe("Instagram webhook events (POST)", () => {
     await processDueJobs(new Date());
     expect(await db.select().from(messages).where(eq(messages.body, "sent from the IG app"))).toHaveLength(0);
     expect(await db.select().from(messages).where(eq(messages.body, "who?"))).toHaveLength(0);
+  });
+});
+
+describe("Instagram replies through automations", () => {
+  const dmFrom = (sender: string, mid: string, text: string) =>
+    JSON.stringify({ object: "instagram", entry: [{ id: IG_ACCOUNT, time: 1, messaging: [{ sender: { id: sender }, recipient: { id: IG_ACCOUNT }, timestamp: Date.now(), message: { mid, text } }] }] });
+  const deliver = async (body: string) => {
+    expect((await receiveWebhook(body, sign(body))).status).toBe(200);
+    await processDueJobs(new Date());
+  };
+
+  it("stores DMs but sends nothing while auto-replies are off", async () => {
+    mockMeta();
+    sentBodies.length = 0;
+    const flow = await createAutomation(ctx, { name: "IG hello" }); // keyword "hello" → message → end
+    await activateAutomation(ctx, flow.id);
+    await deliver(dmFrom("2001", "m-off", "hello"));
+    expect(sentBodies).toHaveLength(0);
+    const [contact] = await db.select().from(contacts).where(and(eq(contacts.workspaceId, ctx.workspaceId), eq(contacts.channelUserId, "2001")));
+    expect(contact).toMatchObject({ firstName: "Dana", lastName: "Bek", customFields: { instagram_username: "dana.bek" } });
+  });
+
+  it("replies via the official API when enabled, rendering variables, and records it as sent", async () => {
+    mockMeta();
+    sentBodies.length = 0;
+    await setInstagramAutoReply(ctx, true);
+    await deliver(dmFrom("2002", "m-on", "hello there"));
+    expect(sentBodies).toHaveLength(1);
+    expect(sentBodies[0]!.recipient.id).toBe("2002");
+    expect(String(sentBodies[0]!.message.text)).toContain("Hi Dana!");
+    const out = await db.select().from(messages).where(and(eq(messages.workspaceId, ctx.workspaceId), eq(messages.kind, "outbound"), eq(messages.deliveryStatus, "sent")));
+    expect(out.some((m) => (m.payload as { externalId?: string }).externalId === "mid.out.1")).toBe(true);
+  });
+
+  it("maps quick replies and link buttons to Instagram formats", async () => {
+    mockMeta();
+    sentBodies.length = 0;
+    const t = (await listTemplates(ctx)).find((x) => x.slug === "course-sales")!;
+    const course = await createAutomationFromTemplate(ctx, t.id);
+    await activateAutomation(ctx, course.id);
+    await deliver(dmFrom("2003", "m-c1", "COURSE"));
+    expect(sentBodies[0]!.message).toMatchObject({ quick_replies: [{ content_type: "text", title: "Beginner", payload: "Beginner" }, { content_type: "text", title: "Advanced" }] });
+    await deliver(dmFrom("2003", "m-c2", "Beginner"));
+    const tmpl = sentBodies[1]!.message as { attachment: { payload: { template_type: string; buttons: { type: string; url: string }[] } } };
+    expect(tmpl.attachment.payload.template_type).toBe("button");
+    expect(tmpl.attachment.payload.buttons[0]).toMatchObject({ type: "web_url", url: "https://example.com/courses/beginner" });
+  });
+
+  it("refuses to reply outside the 24-hour window", async () => {
+    mockMeta();
+    const [conv] = await db
+      .select({ id: conversations.id })
+      .from(conversations)
+      .innerJoin(contacts, eq(contacts.id, conversations.contactId))
+      .where(and(eq(conversations.workspaceId, ctx.workspaceId), eq(contacts.channelUserId, "2002")));
+    await db.update(messages).set({ createdAt: new Date(Date.now() - 25 * 3_600_000) }).where(eq(messages.conversationId, conv!.id));
+    await expect(sendHumanReply(ctx, conv!.id, "late reply")).rejects.toMatchObject({ message: expect.stringContaining("24-hour") });
+    await setInstagramAutoReply(ctx, false);
   });
 });
 

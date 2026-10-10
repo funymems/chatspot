@@ -51,8 +51,7 @@ async function Header({ params }: { params: Props["params"] }) {
       title="Conversations"
       description={
         <span className="inline-flex items-center gap-2">
-          <span className="rounded-full bg-warning/15 px-2 py-0.5 text-xs font-medium text-amber-800">Demo channel</span>
-          Simulated inbox — no external channel (e.g. Instagram) is connected yet.
+          Messages from Instagram (when connected) and the demo-channel simulator. Simulated conversations are marked “Demo channel”.
         </span>
       }
       actions={<NewSimulationButton slug={slug} />}

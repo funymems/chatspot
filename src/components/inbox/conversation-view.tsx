@@ -41,7 +41,8 @@ export function ConversationView({
   contact: { id: string; name: string; email: string | null; phone: string | null; leadStatus: string } | null;
   messages: Msg[];
 }) {
-  const [mode, setMode] = useState<Mode>("simulate");
+  const isDemo = conversation.channel === "mock";
+  const [mode, setMode] = useState<Mode>(isDemo ? "simulate" : "reply");
   const [text, setText] = useState("");
   const [agentId, setAgentId] = useState(agents[0]?.id ?? "");
   const [pending, start] = useTransition();
@@ -83,7 +84,7 @@ export function ConversationView({
             {contact && <LeadStatusBadge status={contact.leadStatus} />}
           </p>
           <p className="truncate text-xs text-muted-foreground">
-            {[contact?.email, contact?.phone].filter(Boolean).join(" · ") || "No contact details"} · {conversation.channel === "mock" ? "Demo channel" : conversation.channel}
+            {[contact?.email, contact?.phone].filter(Boolean).join(" · ") || "No contact details"} · {conversation.channel === "mock" ? "Demo channel" : conversation.channel === "instagram" ? "Instagram" : conversation.channel}
             {conversation.assigneeName && ` · assigned to ${conversation.assignedToMe ? "you" : conversation.assigneeName}`}
           </p>
         </div>
@@ -133,7 +134,9 @@ export function ConversationView({
               ["reply", "Reply as you"],
               ["note", "Internal note"],
             ] as const
-          ).map(([m, label]) => (
+          )
+            .filter(([m]) => isDemo || m !== "simulate")
+            .map(([m, label]) => (
             <button
               key={m}
               type="button"
@@ -176,7 +179,15 @@ export function ConversationView({
                 e.currentTarget.form?.requestSubmit();
               }
             }}
-            placeholder={mode === "simulate" ? "Type what the customer sends…" : mode === "reply" ? "Write a reply (delivered via the demo channel)…" : "Visible to your team only…"}
+            placeholder={
+              mode === "simulate"
+                ? "Type what the customer sends…"
+                : mode === "reply"
+                  ? isDemo
+                    ? "Write a reply (delivered via the demo channel)…"
+                    : "Write a reply — sent to the customer on Instagram…"
+                  : "Visible to your team only…"
+            }
             aria-label="Message"
             className={cn("min-h-0 resize-none", mode === "note" && "bg-warning/10")}
           />
