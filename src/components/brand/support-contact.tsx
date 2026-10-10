@@ -6,6 +6,6 @@ export function SupportContact() {
       {email}
     </a>
   ) : (
-    <span className="font-medium">the support email listed in the app&apos;s Meta developer profile</span>
+    <span className="font-medium">адрес поддержки, указанный в профиле разработчика приложения в Meta</span>
   );
 }

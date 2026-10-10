@@ -5,9 +5,9 @@ const rules = { keywords: ["refund now", "complaint"], onNoAnswer: false, onExpl
 
 describe("detectEscalation", () => {
   it("detects explicit requests for a person in English and Russian", () => {
-    expect(detectEscalation("Can I talk to a human please?", rules)).toMatch(/person/);
-    expect(detectEscalation("Позовите менеджера", rules)).toMatch(/person/);
-    expect(detectEscalation("хочу поговорить с человеком", rules)).toMatch(/person/);
+    expect(detectEscalation("Can I talk to a human please?", rules)).toMatch(/с человеком/);
+    expect(detectEscalation("Позовите менеджера", rules)).toMatch(/с человеком/);
+    expect(detectEscalation("хочу поговорить с человеком", rules)).toMatch(/с человеком/);
   });
   it("detects configured keywords as phrases", () => {
     expect(detectEscalation("I want a REFUND NOW!", rules)).toMatch(/refund now/);

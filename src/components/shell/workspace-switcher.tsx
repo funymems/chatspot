@@ -57,7 +57,7 @@ export function WorkspaceSwitcher({
               "flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-sm outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring",
               collapsed && "justify-center",
             )}
-            aria-label={`Current workspace: ${current.name}. Switch workspace`}
+            aria-label={`Текущее рабочее пространство: ${current.name}. Сменить`}
           >
             <Initial name={current.name} />
             {!collapsed && (
@@ -72,17 +72,17 @@ export function WorkspaceSwitcher({
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">
-          <DropdownMenuLabel className="text-xs text-muted-foreground">Workspaces</DropdownMenuLabel>
+          <DropdownMenuLabel className="text-xs text-muted-foreground">Рабочие пространства</DropdownMenuLabel>
           {workspaces.map((ws) => (
             <DropdownMenuItem key={ws.id} onSelect={() => router.push(`/w/${ws.slug}/dashboard`)}>
               <span className="truncate">{ws.name}</span>
               {ws.isDemo && <span className="ml-1 text-xs text-muted-foreground">(demo)</span>}
-              {ws.id === current.id && <Check className="ml-auto" aria-label="Current" />}
+              {ws.id === current.id && <Check className="ml-auto" aria-label="Текущее" />}
             </DropdownMenuItem>
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setDialogOpen(true)}>
-            <Plus aria-hidden /> Create workspace
+            <Plus aria-hidden /> Создать пространство
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -118,26 +118,26 @@ export function CreateWorkspaceDialog({ open, onOpenChange }: { open: boolean; o
       <DialogContent>
         <form onSubmit={submit} className="space-y-4">
           <DialogHeader>
-            <DialogTitle>Create workspace</DialogTitle>
+            <DialogTitle>Новое рабочее пространство</DialogTitle>
             <DialogDescription>
-              Workspaces keep automations, contacts and agents fully separate — e.g. one per brand or client.
+              В каждом рабочем пространстве свои автоматизации, контакты и агенты — например, отдельное для каждого бренда или клиента.
             </DialogDescription>
           </DialogHeader>
-          <Field id="workspace-name" label="Workspace name" error={error}>
+          <Field id="workspace-name" label="Название рабочего пространства" error={error}>
             <Input
               {...fieldA11y("workspace-name", error)}
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Acme Studio"
+              placeholder="Моя студия"
               autoFocus
             />
           </Field>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              Отмена
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? "Creating…" : "Create workspace"}
+              {pending ? "Создаём…" : "Создать"}
             </Button>
           </DialogFooter>
         </form>

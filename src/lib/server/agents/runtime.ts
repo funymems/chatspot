@@ -76,7 +76,7 @@ function buildSystemPrompt(agent: Agent, chunks: RetrievedChunk[], extra: { inst
 /** Deterministic, clearly-labelled answer used when no AI provider is configured. */
 function demoReply(message: string, chunks: RetrievedChunk[]): { reply: string; answered: boolean; used: RetrievedChunk[] } {
   if (/^\s*(hi|hello|hey|привет|здравствуйте|добрый)\b/i.test(message) && message.trim().split(/\s+/).length <= 3) {
-    return { reply: "Hi! How can I help you today?", answered: true, used: [] };
+    return { reply: "Здравствуйте! Чем могу помочь?", answered: true, used: [] };
   }
   const top = chunks[0];
   if (!top) return { reply: "", answered: false, used: [] };
@@ -125,7 +125,7 @@ export async function generateAgentReply(input: {
       parsed = replySchema.parse(JSON.parse(res.text));
     } catch (err) {
       logger.warn("agent.bad_model_output", { agentId: agent.id, err });
-      throw new Error("The AI model returned an invalid response");
+      throw new Error("Модель ИИ вернула некорректный ответ");
     }
     reply = parsed.reply.trim();
     answered = parsed.answered;
@@ -148,7 +148,7 @@ export async function generateAgentReply(input: {
     answered,
     usedSources,
     handoff,
-    handoffReason: handoff ? (needsHuman ? "The agent decided a human should take over" : "The agent couldn't answer the question") : undefined,
+    handoffReason: handoff ? (needsHuman ? "Агент решил, что нужен человек" : "Агент не смог ответить на вопрос") : undefined,
     provider: provider ? `gemini:${provider.model}` : "demo",
   };
 }

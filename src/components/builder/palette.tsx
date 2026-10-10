@@ -7,15 +7,15 @@ import { cn } from "@/lib/utils";
 export const DRAG_MIME = "application/x-chatspot-node";
 
 const groups: { title: string; types: NodeType[] }[] = [
-  { title: "Start", types: ["trigger"] },
-  { title: "Steps", types: ["message", "condition", "action", "ai_response"] },
-  { title: "Finish", types: ["end"] },
-  { title: "Annotate", types: ["note"] },
+  { title: "Начало", types: ["trigger"] },
+  { title: "Шаги", types: ["message", "condition", "action", "ai_response"] },
+  { title: "Завершение", types: ["end"] },
+  { title: "Пометки", types: ["note"] },
 ];
 
 export function NodePalette({ onAdd, hasTrigger }: { onAdd: (type: NodeType) => void; hasTrigger: boolean }) {
   return (
-    <nav aria-label="Node palette" className="space-y-4 p-3">
+    <nav aria-label="Блоки сценария" className="space-y-4 p-3">
       {groups.map((g) => (
         <div key={g.title} className="space-y-1.5">
           <p className="px-1 text-[11px] font-semibold tracking-wide text-muted-foreground uppercase">{g.title}</p>
@@ -34,7 +34,7 @@ export function NodePalette({ onAdd, hasTrigger }: { onAdd: (type: NodeType) => 
                   e.dataTransfer.effectAllowed = "move";
                 }}
                 onClick={() => onAdd(type)}
-                title={disabled ? "A flow can only have one trigger" : `Click or drag to add a ${meta.label} node`}
+                title={disabled ? "В сценарии может быть только один триггер" : `Нажмите или перетащите, чтобы добавить блок «${meta.label}»`}
                 className={cn(
                   "flex w-full cursor-grab items-center gap-2.5 rounded-lg border bg-card p-2 text-left text-sm shadow-xs transition-colors outline-none hover:border-primary/40 hover:bg-accent/40 focus-visible:ring-2 focus-visible:ring-ring active:cursor-grabbing",
                   disabled && "cursor-not-allowed opacity-50 hover:border-border hover:bg-card",
@@ -52,7 +52,7 @@ export function NodePalette({ onAdd, hasTrigger }: { onAdd: (type: NodeType) => 
           })}
         </div>
       ))}
-      <p className="px-1 text-xs text-muted-foreground">Drag onto the canvas or click to add. Connect nodes by dragging from a handle.</p>
+      <p className="px-1 text-xs text-muted-foreground">Перетащите блок на холст или нажмите на него. Чтобы соединить блоки, потяните от точки на краю блока.</p>
     </nav>
   );
 }

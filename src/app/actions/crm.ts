@@ -2,6 +2,7 @@
 
 import { refresh } from "next/cache";
 import { z } from "zod";
+import { runStatusLabels } from "@/lib/domain/labels";
 import type { ActionResult } from "@/lib/action-result";
 import { parseInput, runAction } from "@/lib/server/actions";
 import { authorizeWorkspace } from "@/lib/server/auth/guards";
@@ -33,13 +34,13 @@ const optionalEmail = z
   .trim()
   .max(254)
   .transform((s) => s || null)
-  .pipe(z.email("Enter a valid email").nullable());
+  .pipe(z.email("Введите корректный адрес эл. почты").nullable());
 const optionalPhone = z
   .string()
   .trim()
   .max(32)
   .transform((s) => s || null)
-  .pipe(z.string().regex(/^\+?[\d\s()-]{5,}$/, "Enter a valid phone number").nullable());
+  .pipe(z.string().regex(/^\+?[\d\s()-]{5,}$/, "Введите корректный номер телефона").nullable());
 
 const contactSchema = z.object({
   firstName: z.string().trim().max(80).default(""),
@@ -56,7 +57,7 @@ export async function createContactAction(slug: string, input: unknown): Promise
     const ctx = await authorizeWorkspace(slug);
     const data = parseInput(contactSchema.extend({ tags: z.array(z.string().trim().min(1).max(50)).max(20).default([]) }), input);
     const c = await createContact(ctx, data);
-    return { ok: true, data: { id: c.id }, message: "Contact created" };
+    return { ok: true, data: { id: c.id }, message: "Контакт создан" };
   });
 }
 
@@ -65,7 +66,7 @@ export async function updateContactAction(slug: string, id: string, input: unkno
     const ctx = await authorizeWorkspace(slug);
     await updateContact(ctx, idSchema.parse(id), parseInput(contactSchema, input));
     refresh();
-    return { ok: true, data: null, message: "Contact saved" };
+    return { ok: true, data: null, message: "Контакт сохранён" };
   });
 }
 
@@ -75,14 +76,14 @@ export async function setCustomFieldsAction(slug: string, id: string, fields: un
     const data = z.array(z.object({ key: fieldName, value: z.string().max(500) })).max(50).parse(fields);
     await setCustomFields(ctx, idSchema.parse(id), Object.fromEntries(data.map((f) => [f.key, f.value])));
     refresh();
-    return { ok: true, data: null, message: "Custom fields saved" };
+    return { ok: true, data: null, message: "Дополнительные поля сохранены" };
   });
 }
 
 export async function contactTagAction(slug: string, id: string, tag: string, add: boolean): Promise<ActionResult<null>> {
   return runAction("contact.tag", async () => {
     const ctx = await authorizeWorkspace(slug);
-    const t = text(50, "Tag can't be empty").parse(tag);
+    const t = text(50, "Тег не может быть пустым").parse(tag);
     if (add) await addContactTag(ctx, idSchema.parse(id), t);
     else await removeContactTag(ctx, idSchema.parse(id), t);
     refresh();
@@ -95,7 +96,7 @@ export async function mergeContactsAction(slug: string, primaryId: string, dupli
     const ctx = await authorizeWorkspace(slug);
     await mergeContacts(ctx, idSchema.parse(primaryId), idSchema.parse(duplicateId));
     refresh();
-    return { ok: true, data: null, message: "Contacts merged" };
+    return { ok: true, data: null, message: "Контакты объединены" };
   });
 }
 
@@ -103,7 +104,7 @@ export async function deleteContactAction(slug: string, id: string): Promise<Act
   return runAction("contact.delete", async () => {
     const ctx = await authorizeWorkspace(slug);
     await deleteContact(ctx, idSchema.parse(id));
-    return { ok: true, data: null, message: "Contact deleted" };
+    return { ok: true, data: null, message: "Контакт удалён" };
   });
 }
 
@@ -120,13 +121,13 @@ type InboxOp =
   | { op: "discardPreview"; previewId: string };
 
 const opSchema: z.ZodType<InboxOp> = z.discriminatedUnion("op", [
-  z.object({ op: z.literal("note"), text: text(5000, "Write a note") }),
-  z.object({ op: z.literal("reply"), text: text(2000, "Write a reply") }),
-  z.object({ op: z.literal("simulate"), text: text(2000, "Write the customer's message"), eventId: z.uuid() }),
+  z.object({ op: z.literal("note"), text: text(5000, "Напишите заметку") }),
+  z.object({ op: z.literal("reply"), text: text(2000, "Напишите ответ") }),
+  z.object({ op: z.literal("simulate"), text: text(2000, "Напишите сообщение клиента"), eventId: z.uuid() }),
   z.object({ op: z.literal("status"), status: z.enum(["open", "needs_human", "resolved"]) }),
   z.object({ op: z.literal("assign"), toMe: z.boolean() }),
-  z.object({ op: z.literal("preview"), agentId: z.uuid("Choose an agent") }),
-  z.object({ op: z.literal("sendPreview"), previewId: z.uuid(), text: text(2000, "The reply is empty") }),
+  z.object({ op: z.literal("preview"), agentId: z.uuid("Выберите агента") }),
+  z.object({ op: z.literal("sendPreview"), previewId: z.uuid(), text: text(2000, "Ответ пустой") }),
   z.object({ op: z.literal("discardPreview"), previewId: z.uuid() }),
 ]);
 
@@ -147,10 +148,10 @@ export async function inboxAction(slug: string, conversationId: string, input: u
       case "simulate": {
         const res = await simulateInbound(ctx, id, op.text, op.eventId);
         info = res.duplicate
-          ? "Duplicate event ignored"
+          ? "Повторное событие пропущено"
           : res.execution
-            ? `${"resumed" in res && res.resumed ? "Resumed" : "Started"} automation run (${res.execution.status})`
-            : "No active automation matched this message";
+            ? `Автоматизация ${"resumed" in res && res.resumed ? "продолжена" : "запущена"} (${runStatusLabels[res.execution.status] ?? res.execution.status})`
+            : "Ни одна активная автоматизация не подошла к этому сообщению";
         break;
       }
       case "status":
@@ -178,7 +179,7 @@ export async function startSimulationAction(slug: string, input: unknown): Promi
   return runAction("inbox.start", async () => {
     const ctx = await authorizeWorkspace(slug);
     const data = parseInput(
-      z.object({ firstName: text(80, "Enter a first name"), lastName: z.string().trim().max(80).default(""), text: text(2000, "Write the first message") }),
+      z.object({ firstName: text(80, "Введите имя"), lastName: z.string().trim().max(80).default(""), text: text(2000, "Напишите первое сообщение") }),
       input,
     );
     const res = await startSimulatedConversation(ctx, data);
@@ -186,7 +187,7 @@ export async function startSimulationAction(slug: string, input: unknown): Promi
       ok: true,
       data: {
         conversationId: res.conversationId,
-        info: res.result.execution ? `Automation started (${res.result.execution.status})` : "No active automation matched the first message",
+        info: res.result.execution ? `Автоматизация запущена (${runStatusLabels[res.result.execution.status] ?? res.result.execution.status})` : "Ни одна активная автоматизация не подошла к первому сообщению",
       },
     };
   });

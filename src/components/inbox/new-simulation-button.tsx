@@ -19,7 +19,7 @@ export function NewSimulationButton({ slug }: { slug: string }) {
   return (
     <>
       <Button onClick={() => setOpen(true)}>
-        <MessageSquarePlus aria-hidden /> Simulate a customer
+        <MessageSquarePlus aria-hidden /> Симулировать клиента
       </Button>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent>
@@ -42,20 +42,20 @@ export function NewSimulationButton({ slug }: { slug: string }) {
             }}
           >
             <DialogHeader>
-              <DialogTitle>Simulate a customer</DialogTitle>
-              <DialogDescription>Creates a demo-channel contact and sends their first message through your active automations, exactly like a real channel would.</DialogDescription>
+              <DialogTitle>Симуляция клиента</DialogTitle>
+              <DialogDescription>Создаёт контакт в демо-канале и отправляет его первое сообщение через ваши активные автоматизации — так же, как это сделал бы настоящий канал.</DialogDescription>
             </DialogHeader>
             <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="First name" value={v.firstName} onChange={(firstName) => setV({ ...v, firstName })} error={errors.firstName?.[0]} />
-              <TextField label="Last name" value={v.lastName} onChange={(lastName) => setV({ ...v, lastName })} />
+              <TextField label="Имя" value={v.firstName} onChange={(firstName) => setV({ ...v, firstName })} error={errors.firstName?.[0]} />
+              <TextField label="Фамилия" value={v.lastName} onChange={(lastName) => setV({ ...v, lastName })} />
             </div>
-            <TextAreaField label="First message" value={v.text} onChange={(text) => setV({ ...v, text })} rows={2} error={errors.text?.[0]} placeholder="e.g. COURSE" />
+            <TextAreaField label="Первое сообщение" value={v.text} onChange={(text) => setV({ ...v, text })} rows={2} error={errors.text?.[0]} placeholder="Например: КУРС" />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={pending}>
-                {pending ? "Sending…" : "Start conversation"}
+                {pending ? "Отправляем…" : "Начать диалог"}
               </Button>
             </DialogFooter>
           </form>

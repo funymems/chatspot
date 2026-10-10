@@ -40,9 +40,9 @@ export const requireWorkspace = cache(async (slug: string): Promise<WorkspaceCon
 /** For Server Actions / Route Handlers: same checks, but throws AppErrors. */
 export async function authorizeWorkspace(slug: unknown): Promise<WorkspaceContext> {
   const user = await getSessionUser();
-  if (!user) throw new AppError("Your session has expired. Sign in again.", "unauthenticated");
-  if (typeof slug !== "string" || !slug) throw new AppError("Workspace not found", "not_found");
+  if (!user) throw new AppError("Сессия истекла. Войдите снова.", "unauthenticated");
+  if (typeof slug !== "string" || !slug) throw new AppError("Рабочее пространство не найдено", "not_found");
   const ctx = await resolveWorkspaceAccess(user.id, slug);
-  if (!ctx) throw new AppError("Workspace not found", "not_found");
+  if (!ctx) throw new AppError("Рабочее пространство не найдено", "not_found");
   return ctx;
 }

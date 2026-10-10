@@ -53,7 +53,7 @@ async function outbound(conversationId: string) {
 describe("test runs", () => {
   it("runs trigger → message → end, rendering variables into a simulated message", async () => {
     const a = await createAutomation(ctx, { name: "Hello" });
-    const res = await send(a.id, "hello there");
+    const res = await send(a.id, "привет всем");
     expect(res.outcome).toBe("started");
     const exec = await execution((res as { executionId: string }).executionId);
     expect(exec.status).toBe("completed");
@@ -65,7 +65,7 @@ describe("test runs", () => {
     ]);
     const out = await outbound(exec.conversationId!);
     expect(out).toHaveLength(1);
-    expect(out[0]!.body).toContain("Hi Aida!");
+    expect(out[0]!.body).toContain("Привет, Aida!");
     expect(out[0]!.deliveryStatus).toBe("simulated");
   });
 
@@ -86,8 +86,8 @@ describe("test runs", () => {
   it("ignores a duplicate event id", async () => {
     const a = await createAutomation(ctx, { name: "Dupes" });
     const eventId = randomUUID();
-    expect((await send(a.id, "hello", eventId)).outcome).toBe("started");
-    expect((await send(a.id, "hello", eventId)).outcome).toBe("duplicate");
+    expect((await send(a.id, "привет", eventId)).outcome).toBe("started");
+    expect((await send(a.id, "привет", eventId)).outcome).toBe("duplicate");
     const runs = await db.select().from(automationExecutions).where(eq(automationExecutions.automationId, a.id));
     expect(runs).toHaveLength(1);
   });
@@ -95,13 +95,13 @@ describe("test runs", () => {
   it("waits for a reply, branches on it, sets fields and tags (course template)", async () => {
     const t = (await listTemplates(ctx)).find((x) => x.slug === "course-sales")!;
     const a = await createAutomationFromTemplate(ctx, t.id);
-    const started = await send(a.id, "COURSE");
+    const started = await send(a.id, "КУРС");
     const id = (started as { executionId: string }).executionId;
     let exec = await execution(id);
     expect(exec.status).toBe("waiting");
     expect((exec.state as ExecState).wait?.kind).toBe("reply");
 
-    const resumed = await send(a.id, "Beginner please");
+    const resumed = await send(a.id, "Для начинающих, пожалуйста");
     expect(resumed).toEqual({ outcome: "resumed", executionId: id });
     exec = await execution(id);
     expect(exec.status).toBe("completed");
@@ -109,8 +109,8 @@ describe("test runs", () => {
     expect(branch?.branch).toBe("true");
 
     const [contact] = await db.select().from(contacts).where(eq(contacts.id, exec.contactId!));
-    expect(contact!.customFields).toMatchObject({ course_interest: "beginner" });
-    expect(await getContactTags(ctx.workspaceId, contact!.id)).toContain("course-lead");
+    expect(contact!.customFields).toMatchObject({ course_interest: "для начинающих" });
+    expect(await getContactTags(ctx.workspaceId, contact!.id)).toContain("лид-курс");
     const out = await outbound(exec.conversationId!);
     expect(out.at(-1)!.payload).toMatchObject({ linkButtons: [{ url: "https://example.com/courses/beginner" }] });
   });
@@ -177,7 +177,7 @@ describe("test runs", () => {
     await processDueJobs(later(3601 + 86401));
     const exec = await execution(executionId);
     expect(exec.status).toBe("completed");
-    expect(exec.result).toMatchObject({ label: "No response" });
+    expect(exec.result).toMatchObject({ label: "Нет ответа" });
   });
 
   it("isolates test sessions between workspaces", async () => {
@@ -215,7 +215,7 @@ describe("runtime safety", () => {
       g.chain(t, a, c).connect(c, e, "true").connect(c, a, "false");
     }, 20);
     expect(exec.status).toBe("failed");
-    expect(exec.error).toMatch(/Stopped after 20 steps/);
+    expect(exec.error).toMatch(/Остановлено после 20 шагов/);
   });
 
   it("retries retryable failures through the queue, then succeeds", async () => {
@@ -266,17 +266,17 @@ describe("live inbound messages", () => {
     catchAll.chain(t1, m1, e1);
     const generic = await createAutomation(ctx, { name: "Catch all", graph: catchAll.build() });
     await activateAutomation(ctx, generic.id);
-    const specific = await createAutomation(ctx, { name: "Hello live" }); // keyword "hello"
+    const specific = await createAutomation(ctx, { name: "Hello live" }); // keyword "привет"
     await activateAutomation(ctx, specific.id);
 
     const [contact] = await db.insert(contacts).values({ workspaceId: ctx.workspaceId, firstName: "Live", source: "mock", channelUserId: "u1" }).returning();
     const [conv] = await db.insert(conversations).values({ workspaceId: ctx.workspaceId, contactId: contact!.id, channel: "mock" }).returning();
 
     const eventId = randomUUID();
-    const r1 = await handleInboundMessage({ workspaceId: ctx.workspaceId, conversationId: conv!.id, contactId: contact!.id, channel: "mock", externalEventId: eventId, text: "hello!" });
+    const r1 = await handleInboundMessage({ workspaceId: ctx.workspaceId, conversationId: conv!.id, contactId: contact!.id, channel: "mock", externalEventId: eventId, text: "привет!" });
     expect(r1.execution?.automationId).toBe(specific.id);
     expect(r1.execution?.mode).toBe("live");
-    const again = await handleInboundMessage({ workspaceId: ctx.workspaceId, conversationId: conv!.id, contactId: contact!.id, channel: "mock", externalEventId: eventId, text: "hello!" });
+    const again = await handleInboundMessage({ workspaceId: ctx.workspaceId, conversationId: conv!.id, contactId: contact!.id, channel: "mock", externalEventId: eventId, text: "привет!" });
     expect(again.duplicate).toBe(true);
 
     const r2 = await handleInboundMessage({ workspaceId: ctx.workspaceId, conversationId: conv!.id, contactId: contact!.id, channel: "mock", externalEventId: randomUUID(), text: "what's up" });

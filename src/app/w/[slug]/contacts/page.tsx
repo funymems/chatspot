@@ -10,11 +10,11 @@ import { RelativeTime } from "@/components/common/relative-time";
 import { SearchFilter, SelectFilter } from "@/components/common/url-filters";
 import { ContactsIcon } from "@/components/brand/nav-icons";
 import { NewContactButton } from "@/components/contacts/new-contact-button";
-import { LeadStatusBadge, TagChip, contactName, leadStatusOptions } from "@/components/contacts/lead-status";
+import { contactSourceLabels, LeadStatusBadge, TagChip, contactName, leadStatusOptions } from "@/components/contacts/lead-status";
 import { requireWorkspace } from "@/lib/server/auth/guards";
 import { contactSorts, leadStatuses, listContacts, listTags, type ContactSort, type LeadStatus } from "@/lib/server/services/contacts";
 
-export const metadata: Metadata = { title: "Contacts" };
+export const metadata: Metadata = { title: "Контакты" };
 
 type Props = PageProps<"/w/[slug]/contacts">;
 
@@ -37,19 +37,19 @@ async function Header({ params }: { params: Props["params"] }) {
   const tags = await listTags(ctx);
   return (
     <>
-      <PageHeader title="Contacts" description="Everyone who has interacted with your workspace." actions={<NewContactButton slug={slug} />} />
+      <PageHeader title="Контакты" description="Все, кто общался с вашим рабочим пространством." actions={<NewContactButton slug={slug} />} />
       <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center">
-        <SearchFilter placeholder="Search name, email or phone" />
-        <SelectFilter param="tag" label="Filter by tag" allLabel="All tags" options={tags.map((t) => ({ value: t.name, label: `${t.name} (${t.uses})` }))} />
-        <SelectFilter param="status" label="Filter by status" allLabel="All statuses" options={leadStatusOptions} />
+        <SearchFilter placeholder="Поиск по имени, почте или телефону" />
+        <SelectFilter param="tag" label="Фильтр по тегу" allLabel="Все теги" options={tags.map((t) => ({ value: t.name, label: `${t.name} (${t.uses})` }))} />
+        <SelectFilter param="status" label="Фильтр по статусу" allLabel="Все статусы" options={leadStatusOptions} />
         <SelectFilter
           param="sort"
-          label="Sort"
-          allLabel="Newest first"
+          label="Сортировка"
+          allLabel="Сначала новые"
           options={[
-            { value: "oldest", label: "Oldest first" },
-            { value: "name", label: "Name A–Z" },
-            { value: "last_interaction", label: "Last interaction" },
+            { value: "oldest", label: "Сначала старые" },
+            { value: "name", label: "По имени (А–Я)" },
+            { value: "last_interaction", label: "По последнему общению" },
           ]}
         />
       </div>
@@ -72,19 +72,19 @@ async function ContactTable({ params, searchParams }: Pick<Props, "params" | "se
     return filtered ? (
       <EmptyState
         icon={SearchX}
-        title="No contacts match"
-        description="Try a different search or filter."
+        title="Ничего не найдено"
+        description="Попробуйте другой запрос или фильтр."
         action={
           <Button variant="outline" asChild>
-            <Link href={`/w/${slug}/contacts`}>Clear filters</Link>
+            <Link href={`/w/${slug}/contacts`}>Сбросить фильтры</Link>
           </Button>
         }
       />
     ) : (
       <EmptyState
         icon={ContactsIcon}
-        title="No contacts yet"
-        description="Contacts appear automatically when people message you through a channel (or the simulator in Conversations). You can also add them manually."
+        title="Контактов пока нет"
+        description="Контакты появляются автоматически, когда вам пишут через канал (или через симулятор в «Диалогах»). Их также можно добавить вручную."
         action={<NewContactButton slug={slug} />}
       />
     );
@@ -102,12 +102,12 @@ async function ContactTable({ params, searchParams }: Pick<Props, "params" | "se
         <table className="w-full text-sm">
           <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
             <tr>
-              <th className="px-4 py-2.5 font-medium">Name</th>
-              <th className="hidden px-4 py-2.5 font-medium md:table-cell">Email / phone</th>
-              <th className="px-4 py-2.5 font-medium">Status</th>
-              <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Tags</th>
-              <th className="hidden px-4 py-2.5 font-medium sm:table-cell">Source</th>
-              <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Last interaction</th>
+              <th className="px-4 py-2.5 font-medium">Имя</th>
+              <th className="hidden px-4 py-2.5 font-medium md:table-cell">Почта / телефон</th>
+              <th className="px-4 py-2.5 font-medium">Статус</th>
+              <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Теги</th>
+              <th className="hidden px-4 py-2.5 font-medium sm:table-cell">Источник</th>
+              <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Последнее общение</th>
             </tr>
           </thead>
           <tbody className="divide-y">
@@ -118,7 +118,7 @@ async function ContactTable({ params, searchParams }: Pick<Props, "params" | "se
                     {contactName(c)}
                   </Link>
                   <p className="text-xs text-muted-foreground">
-                    Added <RelativeTime date={c.createdAt} />
+                    Добавлен <RelativeTime date={c.createdAt} />
                   </p>
                 </td>
                 <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
@@ -136,7 +136,7 @@ async function ContactTable({ params, searchParams }: Pick<Props, "params" | "se
                     {c.tags.length > 4 && <span className="text-xs text-muted-foreground">+{c.tags.length - 4}</span>}
                   </div>
                 </td>
-                <td className="hidden px-4 py-3 text-xs text-muted-foreground capitalize sm:table-cell">{c.source === "mock" ? "simulator" : c.source}</td>
+                <td className="hidden px-4 py-3 text-xs text-muted-foreground sm:table-cell">{contactSourceLabels[c.source] ?? c.source}</td>
                 <td className="hidden px-4 py-3 whitespace-nowrap text-muted-foreground lg:table-cell">
                   {c.lastInteractionAt ? <RelativeTime date={c.lastInteractionAt} /> : "—"}
                 </td>
@@ -145,30 +145,30 @@ async function ContactTable({ params, searchParams }: Pick<Props, "params" | "se
           </tbody>
         </table>
       </div>
-      <nav className="flex items-center justify-between text-sm text-muted-foreground" aria-label="Pagination">
+      <nav className="flex items-center justify-between text-sm text-muted-foreground" aria-label="Страницы">
         <span>
-          {(res.page - 1) * res.pageSize + 1}–{Math.min(res.page * res.pageSize, res.total)} of {res.total}
+          {(res.page - 1) * res.pageSize + 1}–{Math.min(res.page * res.pageSize, res.total)} из {res.total}
         </span>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" asChild={res.page > 1} disabled={res.page <= 1}>
             {res.page > 1 ? (
               <Link href={pageHref(res.page - 1)}>
-                <ChevronLeft aria-hidden /> Previous
+                <ChevronLeft aria-hidden /> Назад
               </Link>
             ) : (
               <span>
-                <ChevronLeft aria-hidden /> Previous
+                <ChevronLeft aria-hidden /> Назад
               </span>
             )}
           </Button>
           <Button variant="outline" size="sm" asChild={res.page < res.pages} disabled={res.page >= res.pages}>
             {res.page < res.pages ? (
               <Link href={pageHref(res.page + 1)}>
-                Next <ChevronRight aria-hidden />
+                Далее <ChevronRight aria-hidden />
               </Link>
             ) : (
               <span>
-                Next <ChevronRight aria-hidden />
+                Далее <ChevronRight aria-hidden />
               </span>
             )}
           </Button>

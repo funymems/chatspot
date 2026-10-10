@@ -42,7 +42,7 @@ export function useAutomationMutations(slug: string) {
     startTransition(async () => {
       const res = await fn();
       if (res.ok) {
-        toast.success(res.message ?? "Done");
+        toast.success(res.message ?? "Готово");
         onOk?.(res.data);
       } else {
         toast.error(res.error);
@@ -66,30 +66,30 @@ export function AutomationRowMenu({ slug, automation }: { slug: string; automati
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" size="icon-sm" aria-label={`Actions for ${automation.name}`} disabled={m.pending}>
+          <Button variant="ghost" size="icon-sm" aria-label={`Действия: ${automation.name}`} disabled={m.pending}>
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem asChild>
             <Link href={`/w/${slug}/automations/${automation.id}`}>
-              <ExternalLink aria-hidden /> Open
+              <ExternalLink aria-hidden /> Открыть
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem asChild>
             <Link href={`/w/${slug}/automations/${automation.id}/builder`}>
-              <PencilRuler aria-hidden /> Open builder
+              <PencilRuler aria-hidden /> Открыть конструктор
             </Link>
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => m.setActive(automation, !isLive)}>
-            {isLive ? <Pause aria-hidden /> : <Play aria-hidden />} {isLive ? "Deactivate" : "Activate"}
+            {isLive ? <Pause aria-hidden /> : <Play aria-hidden />} {isLive ? "Выключить" : "Включить"}
           </DropdownMenuItem>
           <DropdownMenuItem onSelect={() => m.duplicate(automation)}>
-            <Copy aria-hidden /> Duplicate
+            <Copy aria-hidden /> Создать копию
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setConfirmDelete(true)} className="text-destructive focus:text-destructive">
-            <Trash2 aria-hidden /> Delete
+            <Trash2 aria-hidden /> Удалить
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -118,13 +118,13 @@ export function DeleteAutomationDialog({
     <AlertDialog open={open} onOpenChange={onOpenChange}>
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle>Delete “{name}”?</AlertDialogTitle>
+          <AlertDialogTitle>Удалить «{name}»?</AlertDialogTitle>
           <AlertDialogDescription>
-            This permanently deletes the automation, its versions and its execution history. This can&apos;t be undone.
+            Автоматизация, все её версии и история запусков будут удалены навсегда. Это действие нельзя отменить.
           </AlertDialogDescription>
         </AlertDialogHeader>
         <AlertDialogFooter>
-          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogCancel>Отмена</AlertDialogCancel>
           <AlertDialogAction
             className="bg-destructive text-white hover:bg-destructive/90"
             onClick={() => {
@@ -132,7 +132,7 @@ export function DeleteAutomationDialog({
               onOpenChange(false);
             }}
           >
-            Delete automation
+            Удалить автоматизацию
           </AlertDialogAction>
         </AlertDialogFooter>
       </AlertDialogContent>

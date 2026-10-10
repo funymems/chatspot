@@ -56,8 +56,8 @@ export async function disconnectInstagram(ctx: WorkspaceContext) {
     .delete(channelConnections)
     .where(and(eq(channelConnections.workspaceId, ctx.workspaceId), eq(channelConnections.provider, "instagram")))
     .returning({ username: channelConnections.username });
-  if (!row) throw notFound("Instagram connection");
-  await recordActivity(ctx, { type: "integration.disconnected", summary: `Instagram account @${row.username} disconnected`, entityType: "integration" });
+  if (!row) throw notFound("подключение Instagram");
+  await recordActivity(ctx, { type: "integration.disconnected", summary: `Отключён аккаунт Instagram @${row.username}`, entityType: "integration" });
 }
 
 /** Opt-in switch: run automations on incoming Instagram DMs and reply through Instagram. */
@@ -69,10 +69,10 @@ export async function setInstagramAutoReply(ctx: WorkspaceContext, enabled: bool
     .set({ autoReplyEnabled: enabled, updatedAt: new Date() })
     .where(and(eq(channelConnections.workspaceId, ctx.workspaceId), eq(channelConnections.provider, "instagram")))
     .returning({ username: channelConnections.username });
-  if (!row) throw notFound("Instagram connection");
+  if (!row) throw notFound("подключение Instagram");
   await recordActivity(ctx, {
     type: enabled ? "integration.autoreply_on" : "integration.autoreply_off",
-    summary: `Instagram auto-replies ${enabled ? "enabled" : "disabled"} for @${row.username}`,
+    summary: `Автоответы в Instagram ${enabled ? "включены" : "выключены"} для @${row.username}`,
     entityType: "integration",
   });
 }
@@ -98,7 +98,7 @@ export async function refreshInstagramTokens(now = new Date()) {
   const db = await getDb();
   await db
     .update(channelConnections)
-    .set({ status: "token_expired", lastError: "Access token expired — reconnect Instagram", updatedAt: new Date() })
+    .set({ status: "token_expired", lastError: "Срок действия токена истёк — переподключите Instagram", updatedAt: new Date() })
     .where(and(eq(channelConnections.provider, "instagram"), eq(channelConnections.status, "active"), lt(channelConnections.tokenExpiresAt, now)));
 
   const due = await db
@@ -128,7 +128,7 @@ export async function refreshInstagramTokens(now = new Date()) {
         .update(channelConnections)
         .set({
           status: auth ? "token_expired" : "active",
-          lastError: auth ? "Instagram rejected the token refresh — reconnect the account" : "Token refresh failed temporarily; will retry",
+          lastError: auth ? "Instagram отклонил продление токена — переподключите аккаунт" : "Временная ошибка продления токена, повторим позже",
           updatedAt: new Date(),
         })
         .where(eq(channelConnections.id, c.id));

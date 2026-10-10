@@ -30,7 +30,7 @@ export async function signInAction(_prev: AuthFormState, formData: FormData): Pr
   const result = await runAction("auth.signIn", async () => {
     const input = parseInput(signInSchema, formData);
     const userId = await authenticate(input);
-    if (!userId) return { ok: false, error: "Incorrect email or password" };
+    if (!userId) return { ok: false, error: "Неверная эл. почта или пароль" };
     await createSession(userId);
     const profile = await getProfile(userId);
     const ws = await defaultWorkspaceFor({ id: userId, lastWorkspaceId: profile?.lastWorkspaceId ?? null });

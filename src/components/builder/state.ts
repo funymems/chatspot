@@ -126,7 +126,7 @@ export function duplicateNode(graph: AutomationGraph, id: string): { graph: Auto
     ...structuredClone(source),
     id: copyId,
     position: { x: source.position.x + 40, y: source.position.y + 60 },
-    label: source.label ? `${source.label} (copy)` : undefined,
+    label: source.label ? `${source.label} (копия)` : undefined,
   };
   return { graph: { ...graph, nodes: [...graph.nodes, copy] }, id: copyId };
 }

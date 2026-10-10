@@ -66,7 +66,7 @@ export async function setContactField(workspaceId: string, contactId: string, fi
   if (field === "lead_status") {
     const allowed = ["new", "engaged", "qualified", "customer", "lost"] as const;
     const status = allowed.find((s) => s === v.toLowerCase());
-    if (!status) throw new Error(`"${v}" is not a valid lead status`);
+    if (!status) throw new Error(`«${v}» — недопустимый статус лида`);
     await db.update(contacts).set({ leadStatus: status, updatedAt: new Date() }).where(where);
     return;
   }

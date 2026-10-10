@@ -31,10 +31,10 @@ export async function ensureTestConversation(ctx: WorkspaceContext) {
     .limit(1);
   if (!contact) {
     const [profile] = await db.select({ fullName: profiles.fullName }).from(profiles).where(eq(profiles.userId, ctx.userId)).limit(1);
-    const first = profile?.fullName.split(/\s+/)[0] || "Test";
+    const first = profile?.fullName.split(/\s+/)[0] || "Тест";
     [contact] = await db
       .insert(contacts)
-      .values({ workspaceId: ctx.workspaceId, firstName: first, lastName: "(test)", source: "test", channelUserId, notes: "Created for builder test runs" })
+      .values({ workspaceId: ctx.workspaceId, firstName: first, lastName: "(тест)", source: "test", channelUserId, notes: "Создан для тестовых запусков в конструкторе" })
       .returning();
   }
   let [conv] = await db
@@ -109,8 +109,8 @@ export async function sendTestMessage(
       outcome: "no_match",
       message:
         config.kind === "keyword"
-          ? `This message doesn't contain any trigger keyword (${config.keywords.join(", ")}), so the flow didn't start.`
-          : "This message doesn't match the trigger, so the flow didn't start.",
+          ? `В сообщении нет ни одного ключевого слова триггера (${config.keywords.join(", ")}), поэтому сценарий не запустился.`
+          : "Сообщение не подходит под триггер, поэтому сценарий не запустился.",
     };
   }
 
@@ -199,7 +199,7 @@ export async function retryTestOrLiveExecution(ctx: WorkspaceContext, executionI
     .from(automationExecutions)
     .where(and(eq(automationExecutions.id, executionId), eq(automationExecutions.workspaceId, ctx.workspaceId)))
     .limit(1);
-  if (!row) throw notFound("Run");
+  if (!row) throw notFound("запуск");
   return retryExecution(ctx.workspaceId, executionId);
 }
 

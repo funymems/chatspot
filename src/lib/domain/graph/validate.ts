@@ -35,16 +35,16 @@ export type ValidationContext = {
   selfAutomationId?: string;
 };
 
-const handleLabel = (h: string) => (h === "out" ? "output" : `“${h}” output`);
+const handleLabel = (h: string) => (h === "out" ? "выход" : `выход «${h === "true" ? "Да" : h === "false" ? "Нет" : h}»`);
 
 export const nodeTypeLabels: Record<NodeType, string> = {
-  trigger: "Trigger",
-  message: "Message",
-  condition: "Condition",
-  action: "Action",
-  ai_response: "AI response",
-  note: "Note",
-  end: "End",
+  trigger: "Триггер",
+  message: "Сообщение",
+  condition: "Условие",
+  action: "Действие",
+  ai_response: "Ответ ИИ",
+  note: "Заметка",
+  end: "Конец",
 };
 
 export function nodeDisplayName(node: Pick<GraphNode, "type" | "label">) {
@@ -63,7 +63,7 @@ export function validateGraph(input: unknown, ctx: ValidationContext = {}): Vali
       issues: parsed.error.issues.map((i) => ({
         severity: "error",
         code: "invalid_structure",
-        message: `Invalid flow structure at ${i.path.join(".") || "root"}: ${i.message}`,
+        message: `Некорректная структура сценария (${i.path.join(".") || "корень"}): ${i.message}`,
       })),
     };
   }
@@ -78,7 +78,7 @@ export function validateGraph(input: unknown, ctx: ValidationContext = {}): Vali
   // ── Node ids & per-node config ──
   const byId = new Map<string, GraphNode>();
   for (const node of graph.nodes) {
-    if (byId.has(node.id)) err("duplicate_node_id", `Duplicate node id “${node.id}”`, { nodeId: node.id });
+    if (byId.has(node.id)) err("duplicate_node_id", `Повторяющийся ID блока «${node.id}»`, { nodeId: node.id });
     byId.set(node.id, node);
 
     const schema = nodeConfigSchemas[node.type];
@@ -95,45 +95,45 @@ export function validateGraph(input: unknown, ctx: ValidationContext = {}): Vali
 
   // ── Trigger ──
   const triggers = graph.nodes.filter((n) => n.type === "trigger");
-  if (triggers.length === 0) err("missing_trigger", "Add a Trigger node — every flow needs a starting point");
+  if (triggers.length === 0) err("missing_trigger", "Добавьте блок «Триггер» — сценарию нужна точка запуска");
   if (triggers.length > 1) {
-    for (const t of triggers.slice(1)) err("multiple_triggers", "A flow can only have one Trigger", { nodeId: t.id });
+    for (const t of triggers.slice(1)) err("multiple_triggers", "В сценарии может быть только один триггер", { nodeId: t.id });
   }
   const executable = graph.nodes.filter((n) => n.type !== "note");
-  if (!executable.some((n) => n.type === "end")) err("missing_end", "Add an End node so the flow can finish");
+  if (!executable.some((n) => n.type === "end")) err("missing_end", "Добавьте блок «Конец», чтобы сценарий мог завершиться");
 
   // ── Edges ──
   const outgoing = new Map<string, Map<string, string>>(); // nodeId -> handle -> targetId
   const incoming = new Map<string, number>();
   const seenEdgeIds = new Set<string>();
   for (const edge of graph.edges) {
-    if (seenEdgeIds.has(edge.id)) err("duplicate_edge_id", `Duplicate connection id “${edge.id}”`, { edgeId: edge.id });
+    if (seenEdgeIds.has(edge.id)) err("duplicate_edge_id", `Повторяющийся ID связи «${edge.id}»`, { edgeId: edge.id });
     seenEdgeIds.add(edge.id);
     const source = byId.get(edge.source);
     const target = byId.get(edge.target);
     if (!source || !target) {
-      err("dangling_edge", "A connection points to a node that no longer exists", { edgeId: edge.id });
+      err("dangling_edge", "Связь ведёт к блоку, которого больше нет", { edgeId: edge.id });
       continue;
     }
     if (source.type === "note" || target.type === "note") {
-      err("note_connected", "Notes are annotations and can't be connected", { edgeId: edge.id, nodeId: source.type === "note" ? source.id : target.id });
+      err("note_connected", "Заметки — это комментарии, их нельзя соединять", { edgeId: edge.id, nodeId: source.type === "note" ? source.id : target.id });
       continue;
     }
     if (!outputHandles[source.type].includes(edge.sourceHandle)) {
-      err("invalid_handle", `${nodeDisplayName(source)} has no ${handleLabel(edge.sourceHandle)}`, { edgeId: edge.id, nodeId: source.id });
+      err("invalid_handle", `У блока «${nodeDisplayName(source)}» нет такого выхода: ${handleLabel(edge.sourceHandle)}`, { edgeId: edge.id, nodeId: source.id });
       continue;
     }
     if (!hasInput(target.type)) {
-      err("invalid_target", `${nodeDisplayName(target)} can't receive connections`, { edgeId: edge.id, nodeId: target.id });
+      err("invalid_target", `К блоку «${nodeDisplayName(target)}» нельзя подключиться`, { edgeId: edge.id, nodeId: target.id });
       continue;
     }
     if (edge.source === edge.target) {
-      err("self_loop", `${nodeDisplayName(source)} is connected to itself`, { edgeId: edge.id, nodeId: source.id });
+      err("self_loop", `Блок «${nodeDisplayName(source)}» соединён сам с собой`, { edgeId: edge.id, nodeId: source.id });
       continue;
     }
     const handles = outgoing.get(edge.source) ?? new Map<string, string>();
     if (handles.has(edge.sourceHandle)) {
-      err("multiple_outputs", `${nodeDisplayName(source)}: the ${handleLabel(edge.sourceHandle)} is connected more than once`, {
+      err("multiple_outputs", `${nodeDisplayName(source)}: ${handleLabel(edge.sourceHandle)} подключён несколько раз`, {
         edgeId: edge.id,
         nodeId: source.id,
       });
@@ -148,7 +148,7 @@ export function validateGraph(input: unknown, ctx: ValidationContext = {}): Vali
   for (const node of executable) {
     for (const handle of outputHandles[node.type]) {
       if (!outgoing.get(node.id)?.has(handle)) {
-        err("missing_connection", `${nodeDisplayName(node)}: connect the ${handleLabel(handle)} to the next step`, { nodeId: node.id });
+        err("missing_connection", `${nodeDisplayName(node)}: подключите ${handleLabel(handle)} к следующему шагу`, { nodeId: node.id });
       }
     }
   }
@@ -169,11 +169,11 @@ export function validateGraph(input: unknown, ctx: ValidationContext = {}): Vali
     }
     for (const node of executable) {
       if (!reachable.has(node.id)) {
-        warn("unreachable", `${nodeDisplayName(node)} is not reachable from the Trigger and will never run`, { nodeId: node.id });
+        warn("unreachable", `До блока «${nodeDisplayName(node)}» нельзя дойти от триггера, он никогда не выполнится`, { nodeId: node.id });
       }
     }
     if (!executable.some((n) => n.type === "end" && reachable.has(n.id)) && executable.some((n) => n.type === "end")) {
-      err("end_unreachable", "No End node is reachable from the Trigger");
+      err("end_unreachable", "От триггера нельзя дойти ни до одного блока «Конец»");
     }
 
     // ── Loops: every cycle must contain a pause, otherwise it would spin forever ──
@@ -181,11 +181,11 @@ export function validateGraph(input: unknown, ctx: ValidationContext = {}): Vali
       const pauses = cycle.some((nid) => isPausingNode(byId.get(nid)!));
       const first = cycle[0]!;
       if (!pauses) {
-        err("infinite_loop", "This loop has no wait step and would repeat forever. Add a Wait action or a message that waits for a reply.", {
+        err("infinite_loop", "В этом цикле нет паузы, и он будет повторяться бесконечно. Добавьте действие «Подождать» или сообщение, которое ждёт ответа.", {
           nodeId: first,
         });
       } else {
-        warn("loop", "This flow contains a loop; runs stop after the step limit.", { nodeId: first });
+        warn("loop", "В сценарии есть цикл; запуск остановится, когда достигнет лимита шагов.", { nodeId: first });
       }
     }
   }
@@ -245,18 +245,18 @@ function checkSemantics(node: GraphNode, ctx: ValidationContext, err: Report, wa
   switch (node.type) {
     case "trigger": {
       const d = node.data as { kind: string; keywords: string[]; phrases: string[]; eventName: string };
-      if (d.kind === "keyword" && d.keywords.length === 0) err("trigger_keywords", `${name}: add at least one keyword`, { nodeId: node.id, path: "keywords" });
-      if (d.kind === "phrase" && d.phrases.length === 0) err("trigger_phrases", `${name}: add at least one phrase`, { nodeId: node.id, path: "phrases" });
-      if (d.kind === "webhook" && !d.eventName) err("trigger_event", `${name}: set an event name`, { nodeId: node.id, path: "eventName" });
+      if (d.kind === "keyword" && d.keywords.length === 0) err("trigger_keywords", `${name}: добавьте хотя бы одно ключевое слово`, { nodeId: node.id, path: "keywords" });
+      if (d.kind === "phrase" && d.phrases.length === 0) err("trigger_phrases", `${name}: добавьте хотя бы одну фразу`, { nodeId: node.id, path: "phrases" });
+      if (d.kind === "webhook" && !d.eventName) err("trigger_event", `${name}: укажите название события`, { nodeId: node.id, path: "eventName" });
       break;
     }
     case "message": {
       const d = node.data as { messages: { text: string }[]; quickReplies: unknown[]; waitForReply: boolean };
       d.messages.forEach((m, i) => {
-        if (!m.text.trim()) err("empty_message", `${name}: message ${i + 1} is empty`, { nodeId: node.id, path: `messages.${i}.text` });
+        if (!m.text.trim()) err("empty_message", `${name}: сообщение ${i + 1} пустое`, { nodeId: node.id, path: `messages.${i}.text` });
       });
       if (d.quickReplies.length > 0 && !d.waitForReply) {
-        warn("quick_replies_no_wait", `${name}: quick replies are shown, but the flow won't wait for the answer`, { nodeId: node.id });
+        warn("quick_replies_no_wait", `${name}: кнопки быстрого ответа показываются, но сценарий не ждёт ответа`, { nodeId: node.id });
       }
       break;
     }
@@ -264,21 +264,21 @@ function checkSemantics(node: GraphNode, ctx: ValidationContext, err: Report, wa
       const a = (node.data as { action: { kind: string; automationId?: string; variable?: string; source?: string } }).action;
       if (a.kind === "redirect") {
         if (ctx.selfAutomationId && a.automationId === ctx.selfAutomationId) {
-          err("redirect_self", `${name}: an automation can't redirect to itself`, { nodeId: node.id });
+          err("redirect_self", `${name}: автоматизация не может переходить сама в себя`, { nodeId: node.id });
         } else if (ctx.automationIds && a.automationId && !ctx.automationIds.has(a.automationId)) {
-          err("redirect_missing", `${name}: the target automation no longer exists`, { nodeId: node.id });
+          err("redirect_missing", `${name}: целевой автоматизации больше нет`, { nodeId: node.id });
         }
       }
       if (a.kind === "capture" && a.source === "variable" && !a.variable) {
-        err("capture_variable", `${name}: choose the variable to read from`, { nodeId: node.id });
+        err("capture_variable", `${name}: выберите переменную, из которой брать значение`, { nodeId: node.id });
       }
       break;
     }
     case "ai_response": {
       const d = node.data as { agentId: string; fallback: string; fallbackMessage: string };
-      if (ctx.agentIds && !ctx.agentIds.has(d.agentId)) err("agent_missing", `${name}: the selected AI agent no longer exists`, { nodeId: node.id });
+      if (ctx.agentIds && !ctx.agentIds.has(d.agentId)) err("agent_missing", `${name}: выбранного ИИ-агента больше нет`, { nodeId: node.id });
       if (d.fallback === "custom_message" && !d.fallbackMessage.trim()) {
-        err("fallback_message", `${name}: write the fallback message`, { nodeId: node.id, path: "fallbackMessage" });
+        err("fallback_message", `${name}: напишите запасное сообщение`, { nodeId: node.id, path: "fallbackMessage" });
       }
       break;
     }

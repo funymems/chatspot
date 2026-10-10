@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageContainer, PageHeader } from "@/components/shell/page-header";
 import { RelativeTime } from "@/components/common/relative-time";
 import { RunStatusBadge } from "@/components/automations/run-status";
-import { LeadStatusBadge, contactName } from "@/components/contacts/lead-status";
+import { contactSourceLabels, LeadStatusBadge, contactName } from "@/components/contacts/lead-status";
 import { ContactEditor, CustomFieldsEditor, DuplicatesCard, TagsEditor } from "@/components/contacts/contact-editor";
 import { requireWorkspace } from "@/lib/server/auth/guards";
 import { AppError } from "@/lib/server/errors";
@@ -16,7 +16,7 @@ import { getContactDetail } from "@/lib/server/services/contacts";
 import { idSchema } from "@/lib/validation/automation";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Contact" };
+export const metadata: Metadata = { title: "Контакт" };
 
 type Props = PageProps<"/w/[slug]/contacts/[id]">;
 
@@ -36,12 +36,14 @@ export default function ContactPage({ params }: Props) {
 }
 
 const kindLabel: Record<string, string> = {
-  inbound: "Customer",
-  outbound: "Sent",
-  internal_note: "Note",
-  system: "System",
-  generated_reply: "AI preview",
+  inbound: "Клиент",
+  outbound: "Отправлено",
+  internal_note: "Заметка",
+  system: "Система",
+  generated_reply: "Подсказка ИИ",
 };
+
+const sourceLabel: Record<string, string> = { contact: "контакт", automation: "автоматизация", agent: "ИИ-агент", human: "сотрудник", system: "система" };
 
 async function ContactDetail({ params }: { params: Props["params"] }) {
   const { slug, id } = await params;
@@ -58,11 +60,11 @@ async function ContactDetail({ params }: { params: Props["params"] }) {
   if (c.mergedIntoId) {
     return (
       <PageContainer>
-        <PageHeader breadcrumbs={[{ label: "Contacts", href: `/w/${slug}/contacts` }, { label: contactName(c) }]} title={contactName(c)} />
+        <PageHeader breadcrumbs={[{ label: "Контакты", href: `/w/${slug}/contacts` }, { label: contactName(c) }]} title={contactName(c)} />
         <p className="rounded-lg border bg-card p-4 text-sm">
-          This contact was merged into{" "}
+          Этот контакт объединён с{" "}
           <Link className="font-medium text-primary hover:underline" href={`/w/${slug}/contacts/${c.mergedIntoId}`}>
-            another contact
+            другим контактом
           </Link>
           .
         </p>
@@ -73,7 +75,7 @@ async function ContactDetail({ params }: { params: Props["params"] }) {
   return (
     <PageContainer className="max-w-6xl">
       <PageHeader
-        breadcrumbs={[{ label: "Contacts", href: `/w/${slug}/contacts` }, { label: contactName(c) }]}
+        breadcrumbs={[{ label: "Контакты", href: `/w/${slug}/contacts` }, { label: contactName(c) }]}
         title={
           <span className="flex items-center gap-3">
             {contactName(c)} <LeadStatusBadge status={c.leadStatus} />
@@ -81,11 +83,11 @@ async function ContactDetail({ params }: { params: Props["params"] }) {
         }
         description={
           <>
-            Source: {c.source === "mock" ? "simulator" : c.source} · added <RelativeTime date={c.createdAt} />
+            Источник: {contactSourceLabels[c.source] ?? c.source} · добавлен <RelativeTime date={c.createdAt} />
             {c.lastInteractionAt && (
               <>
                 {" "}
-                · last interaction <RelativeTime date={c.lastInteractionAt} />
+                · последнее общение <RelativeTime date={c.lastInteractionAt} />
               </>
             )}
           </>
@@ -99,12 +101,12 @@ async function ContactDetail({ params }: { params: Props["params"] }) {
           />
           <Card>
             <CardHeader>
-              <CardTitle>Interaction history</CardTitle>
-              <CardDescription>Latest messages across this contact&apos;s conversations.</CardDescription>
+              <CardTitle>История общения</CardTitle>
+              <CardDescription>Последние сообщения во всех диалогах этого контакта.</CardDescription>
             </CardHeader>
             <CardContent>
               {d.history.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No messages yet.</p>
+                <p className="text-sm text-muted-foreground">Сообщений пока нет.</p>
               ) : (
                 <ol className="space-y-3">
                   {d.history.map((m) => (
@@ -113,7 +115,7 @@ async function ContactDetail({ params }: { params: Props["params"] }) {
                       <div className="min-w-0 flex-1">
                         <p className="text-xs text-muted-foreground">
                           {kindLabel[m.kind] ?? m.kind}
-                          {m.kind === "outbound" ? ` by ${m.source}` : ""} · <RelativeTime date={m.createdAt} />
+                          {m.kind === "outbound" ? ` · ${sourceLabel[m.source] ?? m.source}` : ""} · <RelativeTime date={m.createdAt} />
                         </p>
                         <p className="line-clamp-3 whitespace-pre-wrap">{m.body}</p>
                       </div>
@@ -123,7 +125,7 @@ async function ContactDetail({ params }: { params: Props["params"] }) {
               )}
               {d.conversationIds[0] && (
                 <Link href={`/w/${slug}/conversations?c=${d.conversationIds[0]}`} className="mt-4 inline-block text-sm font-medium text-primary hover:underline">
-                  Open in inbox →
+                  Открыть в «Диалогах» →
                 </Link>
               )}
             </CardContent>
@@ -134,11 +136,11 @@ async function ContactDetail({ params }: { params: Props["params"] }) {
           <CustomFieldsEditor slug={slug} contactId={c.id} fields={c.customFields as Record<string, string>} />
           <Card>
             <CardHeader>
-              <CardTitle>Automation runs</CardTitle>
+              <CardTitle>Запуски автоматизаций</CardTitle>
             </CardHeader>
             <CardContent>
               {d.runs.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No automation has run for this contact.</p>
+                <p className="text-sm text-muted-foreground">Для этого контакта автоматизации ещё не запускались.</p>
               ) : (
                 <ul className="space-y-2">
                   {d.runs.map((r) => (

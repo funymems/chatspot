@@ -14,11 +14,11 @@ import { listAgents } from "@/lib/server/services/agents";
 import { aiStatus } from "@/lib/server/ai/provider";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "AI Agents" };
+export const metadata: Metadata = { title: "ИИ-агенты" };
 
 type Props = PageProps<"/w/[slug]/agents">;
 
-const roleLabels = { general: "General assistant", support: "Customer support", sales: "Sales assistant" } as const;
+const roleLabels = { general: "Универсальный помощник", support: "Поддержка клиентов", sales: "Консультант по продажам" } as const;
 
 export default function AgentsPage({ params }: Props) {
   return (
@@ -47,8 +47,8 @@ async function Header({ params }: { params: Props["params"] }) {
   return (
     <>
       <PageHeader
-        title="AI Agents"
-        description="Assistants that answer from your own knowledge base and know when to hand off."
+        title="ИИ-агенты"
+        description="Помощники, которые отвечают по вашей базе знаний и знают, когда передать диалог человеку."
         actions={<NewAgentButton slug={slug} />}
       />
       <AiStatusBanner status={aiStatus()} />
@@ -65,9 +65,9 @@ async function AgentList({ params }: { params: Props["params"] }) {
     return (
       <EmptyState
         icon={AgentsIcon}
-        title="No AI agents yet"
-        description="Create an agent, give it your FAQs and documents, and test it in the built-in chat before using it in automations."
-        action={<NewAgentButton slug={slug}>Create your first agent</NewAgentButton>}
+        title="ИИ-агентов пока нет"
+        description="Создайте агента, добавьте ему частые вопросы и документы и проверьте во встроенном чате, прежде чем использовать в автоматизациях."
+        action={<NewAgentButton slug={slug}>Создать первого агента</NewAgentButton>}
       />
     );
   }
@@ -89,16 +89,16 @@ async function AgentList({ params }: { params: Props["params"] }) {
               <p className="text-xs text-muted-foreground">{roleLabels[a.role]}</p>
             </div>
             <span className={cn("rounded-full px-2 py-0.5 text-xs font-medium", a.enabled ? "bg-success/10 text-success" : "bg-muted text-muted-foreground")}>
-              {a.enabled ? "Enabled" : "Disabled"}
+              {a.enabled ? "Включён" : "Выключен"}
             </span>
           </div>
-          <p className="mt-3 line-clamp-2 min-h-10 text-sm text-muted-foreground">{a.description || "No description"}</p>
+          <p className="mt-3 line-clamp-2 min-h-10 text-sm text-muted-foreground">{a.description || "Без описания"}</p>
           <div className="mt-4 flex items-center gap-4 border-t pt-3 text-xs text-muted-foreground">
             <span className="flex items-center gap-1">
-              <BookOpen className="size-3.5" aria-hidden /> {a.sourceCount} sources
+              <BookOpen className="size-3.5" aria-hidden /> источников: {a.sourceCount}
             </span>
             <span className={cn("flex items-center gap-1", a.unansweredCount > 0 && "text-amber-700")}>
-              <CircleHelp className="size-3.5" aria-hidden /> {a.unansweredCount} unanswered
+              <CircleHelp className="size-3.5" aria-hidden /> без ответа: {a.unansweredCount}
             </span>
             <RelativeTime date={a.updatedAt} className="ml-auto" />
           </div>

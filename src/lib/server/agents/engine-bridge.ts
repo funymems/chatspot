@@ -39,8 +39,8 @@ registerAiStep(async ({ execution, config, scope }) => {
     .from(aiAgents)
     .where(and(eq(aiAgents.id, config.agentId), eq(aiAgents.workspaceId, execution.workspaceId)))
     .limit(1);
-  if (!agent) throw new Error("The AI agent used by this step no longer exists");
-  if (!agent.enabled) throw new Error(`AI agent “${agent.name}” is disabled`);
+  if (!agent) throw new Error("ИИ-агента, выбранного в этом шаге, больше нет");
+  if (!agent.enabled) throw new Error(`ИИ-агент «${agent.name}» выключен`);
 
   const history = execution.conversationId ? await conversationHistory(execution.conversationId, scope.message) : [];
   const res = await generateAgentReply({
@@ -80,7 +80,7 @@ registerAiStep(async ({ execution, config, scope }) => {
     reply,
     usedSources: res.usedSources,
     handoff,
-    handoffReason: handoff ? res.handoffReason ?? "Fallback set to hand off to a human" : undefined,
+    handoffReason: handoff ? res.handoffReason ?? "Если ответа нет, диалог передаётся человеку" : undefined,
     provider: res.provider,
   };
 });

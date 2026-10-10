@@ -20,9 +20,9 @@ const hash = (s: string) => createHash("sha256").update(s).digest("hex");
  * connect accounts. Returns the authorize URL to redirect the browser to.
  */
 export async function startInstagramConnect(ctx: WorkspaceContext): Promise<string> {
-  if (!hasRole(ctx.role, "admin")) throw forbidden("Only workspace owners and admins can connect Instagram");
+  if (!hasRole(ctx.role, "admin")) throw forbidden("Подключать Instagram могут только владельцы и администраторы рабочего пространства");
   const missing = missingOAuthConfig();
-  if (missing.length) throw new AppError(`Instagram isn't configured on the server yet (missing: ${missing.join(", ")})`, "validation");
+  if (missing.length) throw new AppError(`Instagram ещё не настроен на сервере (не заданы: ${missing.join(", ")})`, "validation");
   const cfg = getInstagramConfig()!;
   const state = randomBytes(32).toString("base64url");
   const db = await getDb();
@@ -108,7 +108,7 @@ export async function completeInstagramOAuth(input: {
       await subscribeWebhooks(cfg, long.accessToken, IG_WEBHOOK_FIELDS);
       webhookSubscribedAt = new Date();
     } catch (err) {
-      lastError = err instanceof Error ? `Webhook subscription: ${err.message}` : "Webhook subscription failed";
+      lastError = err instanceof Error ? `Подписка на вебхуки: ${err.message}` : "Не удалось подписаться на вебхуки";
       logger.warn("instagram.webhook_subscribe_failed", { workspaceId: stored.workspaceId, status: err instanceof InstagramApiError ? err.status : undefined });
     }
 
@@ -135,7 +135,7 @@ export async function completeInstagramOAuth(input: {
 
     await recordActivity(
       { workspaceId: stored.workspaceId, userId: stored.userId },
-      { type: "integration.connected", summary: `Instagram account @${profile.username || profile.accountId} connected`, entityType: "integration" },
+      { type: "integration.connected", summary: `Подключён аккаунт Instagram @${profile.username || profile.accountId}`, entityType: "integration" },
     );
     logger.info("instagram.connected", { workspaceId: stored.workspaceId, webhookSubscribed: Boolean(webhookSubscribedAt) });
     return { ok: true, workspaceSlug: slug!, username: profile.username, webhookSubscribed: Boolean(webhookSubscribedAt) };
@@ -150,12 +150,12 @@ export async function completeInstagramOAuth(input: {
 }
 
 export const oauthErrorMessages: Record<Exclude<OAuthOutcome, { ok: true }>["reason"], string> = {
-  state: "The connection request expired or didn't match your session. Please try again.",
-  cancelled: "Instagram authorization was cancelled.",
-  denied_scopes: "Some required permissions were not granted. Reconnect and allow access to messages.",
-  provider_error: "Instagram returned an error during authorization. Please try again.",
-  exchange_failed: "We couldn't complete the connection with Instagram. Check the app credentials and try again.",
-  already_connected: "This Instagram account is already connected to another workspace.",
-  config: "Instagram isn't configured on the server.",
-  forbidden: "You don't have permission to connect Instagram in this workspace.",
+  state: "Запрос на подключение устарел или не совпал с вашей сессией. Попробуйте ещё раз.",
+  cancelled: "Авторизация в Instagram отменена.",
+  denied_scopes: "Не все нужные разрешения выданы. Переподключите аккаунт и разрешите доступ к сообщениям.",
+  provider_error: "Instagram вернул ошибку при авторизации. Попробуйте ещё раз.",
+  exchange_failed: "Не удалось завершить подключение к Instagram. Проверьте данные приложения и попробуйте ещё раз.",
+  already_connected: "Этот аккаунт Instagram уже подключён к другому рабочему пространству.",
+  config: "Instagram не настроен на сервере.",
+  forbidden: "У вас нет прав подключать Instagram в этом рабочем пространстве.",
 };

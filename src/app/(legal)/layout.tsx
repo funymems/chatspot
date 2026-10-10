@@ -6,15 +6,15 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
     <div className="min-h-svh bg-background">
       <header className="border-b bg-card">
         <div className="mx-auto flex h-14 max-w-3xl items-center justify-between px-4">
-          <Link href="/" aria-label="ChatSpot home">
+          <Link href="/" aria-label="ChatSpot — главная">
             <Logo />
           </Link>
           <nav className="flex gap-4 text-sm text-muted-foreground">
             <Link href="/privacy" className="hover:text-foreground">
-              Privacy
+              Конфиденциальность
             </Link>
             <Link href="/data-deletion" className="hover:text-foreground">
-              Data deletion
+              Удаление данных
             </Link>
           </nav>
         </div>

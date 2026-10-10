@@ -19,7 +19,7 @@ export function ShellSkeleton() {
 
 export function PageSkeleton() {
   return (
-    <div className="mx-auto w-full max-w-7xl space-y-6 p-6 lg:p-8" role="status" aria-label="Loading">
+    <div className="mx-auto w-full max-w-7xl space-y-6 p-6 lg:p-8" role="status" aria-label="Загрузка">
       <div className="space-y-2">
         <Skeleton className="h-7 w-48" />
         <Skeleton className="h-4 w-80" />

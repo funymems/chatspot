@@ -7,11 +7,11 @@ import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 
 const statuses = [
-  { value: "", label: "All" },
-  { value: "active", label: "Active" },
-  { value: "draft", label: "Draft" },
-  { value: "inactive", label: "Inactive" },
-  { value: "error", label: "Error" },
+  { value: "", label: "Все" },
+  { value: "active", label: "Активные" },
+  { value: "draft", label: "Черновики" },
+  { value: "inactive", label: "Выключенные" },
+  { value: "error", label: "С ошибками" },
 ];
 
 /** Search + status filter, stored in the URL so results are shareable and survive refresh. */
@@ -43,7 +43,7 @@ export function AutomationFilters() {
 
   return (
     <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <div role="tablist" aria-label="Filter by status" className="inline-flex rounded-lg bg-muted p-1">
+      <div role="tablist" aria-label="Фильтр по статусу" className="inline-flex rounded-lg bg-muted p-1">
         {statuses.map((s) => (
           <button
             key={s.value}
@@ -64,18 +64,18 @@ export function AutomationFilters() {
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Search automations"
-          aria-label="Search automations"
+          placeholder="Поиск автоматизаций"
+          aria-label="Поиск автоматизаций"
           className="h-9 pr-8 pl-8"
         />
         {pending ? (
-          <Loader2 className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-label="Loading" />
+          <Loader2 className="absolute top-1/2 right-2.5 size-4 -translate-y-1/2 animate-spin text-muted-foreground" aria-label="Загрузка" />
         ) : q ? (
           <button
             type="button"
             onClick={() => setQ("")}
             className="absolute top-1/2 right-2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
-            aria-label="Clear search"
+            aria-label="Очистить поиск"
           >
             <X className="size-4" />
           </button>

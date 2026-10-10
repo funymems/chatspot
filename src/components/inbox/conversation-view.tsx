@@ -74,38 +74,38 @@ export function ConversationView({
     <div className="flex h-full flex-col">
       <header className="flex flex-wrap items-center gap-2 border-b px-4 py-2.5">
         <Button asChild variant="ghost" size="icon-sm" className="md:hidden">
-          <Link href={backHref} aria-label="Back to list">
+          <Link href={backHref} aria-label="Назад к списку">
             <ArrowLeft />
           </Link>
         </Button>
         <div className="min-w-0">
           <p className="flex items-center gap-2 truncate font-medium">
-            {contact?.name ?? "Unknown contact"}
+            {contact?.name ?? "Неизвестный контакт"}
             {contact && <LeadStatusBadge status={contact.leadStatus} />}
           </p>
           <p className="truncate text-xs text-muted-foreground">
-            {[contact?.email, contact?.phone].filter(Boolean).join(" · ") || "No contact details"} · {conversation.channel === "mock" ? "Demo channel" : conversation.channel === "instagram" ? "Instagram" : conversation.channel}
-            {conversation.assigneeName && ` · assigned to ${conversation.assignedToMe ? "you" : conversation.assigneeName}`}
+            {[contact?.email, contact?.phone].filter(Boolean).join(" · ") || "Нет контактных данных"} · {conversation.channel === "mock" ? "Демо-канал" : conversation.channel === "instagram" ? "Instagram" : conversation.channel}
+            {conversation.assigneeName && ` · ответственный: ${conversation.assignedToMe ? "вы" : conversation.assigneeName}`}
           </p>
         </div>
         <div className="ml-auto flex flex-wrap items-center gap-1.5">
           {contact && (
             <Button asChild variant="ghost" size="sm">
               <Link href={`/w/${slug}/contacts/${contact.id}`}>
-                <UserRound aria-hidden /> Contact
+                <UserRound aria-hidden /> Контакт
               </Link>
             </Button>
           )}
           <Button variant="outline" size="sm" disabled={pending} onClick={() => run({ op: "assign", toMe: !conversation.assignedToMe })}>
-            <Hand aria-hidden /> {conversation.assignedToMe ? "Unassign" : "Assign to me"}
+            <Hand aria-hidden /> {conversation.assignedToMe ? "Снять с себя" : "Взять себе"}
           </Button>
           {conversation.status === "resolved" ? (
             <Button variant="outline" size="sm" disabled={pending} onClick={() => run({ op: "status", status: "open" })}>
-              <RotateCcw aria-hidden /> Reopen
+              <RotateCcw aria-hidden /> Открыть снова
             </Button>
           ) : (
             <Button size="sm" disabled={pending} onClick={() => run({ op: "status", status: "resolved" })}>
-              <CheckCheck aria-hidden /> Resolve
+              <CheckCheck aria-hidden /> Решено
             </Button>
           )}
         </div>
@@ -113,7 +113,7 @@ export function ConversationView({
 
       {conversation.status === "needs_human" && (
         <p className="flex items-center gap-2 border-b bg-destructive/5 px-4 py-2 text-xs text-destructive">
-          <Hand className="size-4" aria-hidden /> Handed off — a human should reply. Automations keep running if the customer writes again.
+          <Hand className="size-4" aria-hidden /> Диалог передан человеку — нужно ответить вручную. Если клиент напишет снова, автоматизации продолжат работать.
         </p>
       )}
 
@@ -127,12 +127,12 @@ export function ConversationView({
       {preview && <PreviewEditor key={preview.id} preview={preview} pending={pending} run={run} />}
 
       <form onSubmit={submit} className="space-y-2 border-t bg-card p-3">
-        <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label="Composer mode">
+        <div className="flex flex-wrap items-center gap-1" role="tablist" aria-label="Режим ввода">
           {(
             [
-              ["simulate", "Customer message (simulate)"],
-              ["reply", "Reply as you"],
-              ["note", "Internal note"],
+              ["simulate", "Сообщение клиента (симуляция)"],
+              ["reply", "Ответ от вас"],
+              ["note", "Внутренняя заметка"],
             ] as const
           )
             .filter(([m]) => isDemo || m !== "simulate")
@@ -151,7 +151,7 @@ export function ConversationView({
           {agents.length > 0 && (
             <div className="ml-auto flex items-center gap-1.5">
               <Select value={agentId} onValueChange={setAgentId}>
-                <SelectTrigger className="h-7 w-40 text-xs" aria-label="Agent for AI preview">
+                <SelectTrigger className="h-7 w-40 text-xs" aria-label="Агент для подсказки ИИ">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -163,7 +163,7 @@ export function ConversationView({
                 </SelectContent>
               </Select>
               <Button type="button" variant="outline" size="sm" disabled={pending || !agentId || Boolean(preview)} onClick={() => run({ op: "preview", agentId })}>
-                <Wand2 aria-hidden /> AI suggestion
+                <Wand2 aria-hidden /> Подсказка ИИ
               </Button>
             </div>
           )}
@@ -181,17 +181,17 @@ export function ConversationView({
             }}
             placeholder={
               mode === "simulate"
-                ? "Type what the customer sends…"
+                ? "Напишите, что отправляет клиент…"
                 : mode === "reply"
                   ? isDemo
-                    ? "Write a reply (delivered via the demo channel)…"
-                    : "Write a reply — sent to the customer on Instagram…"
-                  : "Visible to your team only…"
+                    ? "Напишите ответ (отправится через демо-канал)…"
+                    : "Напишите ответ — он уйдёт клиенту в Instagram…"
+                  : "Видно только вашей команде…"
             }
-            aria-label="Message"
+            aria-label="Сообщение"
             className={cn("min-h-0 resize-none", mode === "note" && "bg-warning/10")}
           />
-          <Button type="submit" disabled={pending || !text.trim()} aria-label="Send" className="self-end">
+          <Button type="submit" disabled={pending || !text.trim()} aria-label="Отправить" className="self-end">
             <SendHorizontal aria-hidden />
           </Button>
         </div>
@@ -199,6 +199,8 @@ export function ConversationView({
     </div>
   );
 }
+
+const deliveryLabels: Record<string, string> = { simulated: "симуляция", pending: "отправляется", sent: "отправлено", failed: "не доставлено" };
 
 function MessageItem({ m }: { m: Msg }) {
   if (m.kind === "system") {
@@ -212,14 +214,14 @@ function MessageItem({ m }: { m: Msg }) {
     return (
       <div className="mx-auto max-w-[85%] rounded-lg border border-warning/40 bg-warning/10 px-3 py-2 text-sm">
         <p className="mb-0.5 flex items-center gap-1 text-[11px] font-medium text-amber-800">
-          <Lock className="size-3" aria-hidden /> Internal note · {m.authorName ?? "Team"} · <RelativeTime date={m.createdAt} />
+          <Lock className="size-3" aria-hidden /> Внутренняя заметка · {m.authorName ?? "Команда"} · <RelativeTime date={m.createdAt} />
         </p>
         <p className="whitespace-pre-wrap">{m.body}</p>
       </div>
     );
   }
   const inbound = m.kind === "inbound";
-  const who = inbound ? "Customer" : m.source === "agent" ? `AI · ${m.agentName ?? "agent"}` : m.source === "automation" ? "Automation" : m.authorName ?? "You";
+  const who = inbound ? "Клиент" : m.source === "agent" ? `ИИ · ${m.agentName ?? "агент"}` : m.source === "automation" ? "Автоматизация" : m.authorName ?? "Вы";
   return (
     <div className={cn("flex flex-col gap-1", inbound ? "items-start" : "items-end")}>
       <div className={cn("max-w-[75%] rounded-2xl px-3 py-2 text-sm whitespace-pre-wrap", inbound ? "rounded-bl-sm border bg-card" : "rounded-br-sm bg-primary text-primary-foreground")}>
@@ -241,7 +243,7 @@ function MessageItem({ m }: { m: Msg }) {
       </div>
       <p className="text-[11px] text-muted-foreground">
         {who} · <RelativeTime date={m.createdAt} />
-        {!inbound && m.deliveryStatus && ` · ${m.deliveryStatus}`}
+        {!inbound && m.deliveryStatus && ` · ${deliveryLabels[m.deliveryStatus] ?? m.deliveryStatus}`}
       </p>
     </div>
   );
@@ -252,21 +254,21 @@ function PreviewEditor({ preview, pending, run }: { preview: Msg; pending: boole
   return (
     <div className="space-y-2 border-t bg-accent/40 p-3">
       <p className="flex flex-wrap items-center gap-1.5 text-xs font-medium text-accent-foreground">
-        <Wand2 className="size-3.5" aria-hidden /> AI suggestion from {preview.agentName ?? "agent"} — not sent yet
-        {preview.payload.answered === false && <span className="rounded bg-warning/20 px-1.5 text-amber-800">fallback</span>}
+        <Wand2 className="size-3.5" aria-hidden /> Подсказка ИИ от {preview.agentName ?? "агента"} — ещё не отправлена
+        {preview.payload.answered === false && <span className="rounded bg-warning/20 px-1.5 text-amber-800">запасной ответ</span>}
         {preview.payload.usedSources?.map((s) => (
           <span key={s.id} className="inline-flex items-center gap-1 rounded bg-card px-1.5 font-normal">
             <BookOpen className="size-3" aria-hidden /> {s.title}
           </span>
         ))}
       </p>
-      <Textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} aria-label="Edit AI suggestion" className="bg-card" />
+      <Textarea rows={2} value={text} onChange={(e) => setText(e.target.value)} aria-label="Изменить подсказку ИИ" className="bg-card" />
       <div className="flex gap-2">
         <Button size="sm" disabled={pending || !text.trim()} onClick={() => run({ op: "sendPreview", previewId: preview.id, text })}>
-          <SendHorizontal aria-hidden /> Send
+          <SendHorizontal aria-hidden /> Отправить
         </Button>
         <Button size="sm" variant="ghost" disabled={pending} onClick={() => run({ op: "discardPreview", previewId: preview.id })}>
-          <X aria-hidden /> Discard
+          <X aria-hidden /> Отклонить
         </Button>
       </div>
     </div>

@@ -23,12 +23,12 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
     <div className="space-y-6">
       <div className="space-y-1.5">
         <h1 className="text-2xl font-semibold tracking-tight">
-          {mode === "login" ? "Welcome back" : "Create your workspace"}
+          {mode === "login" ? "С возвращением" : "Создайте рабочее пространство"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {mode === "login"
-            ? "Sign in to manage your automations and agents."
-            : "Start building chat automations in minutes."}
+            ? "Войдите, чтобы управлять автоматизациями и агентами."
+            : "Настройте первую автоматизацию переписки за несколько минут."}
         </p>
       </div>
 
@@ -40,18 +40,18 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
           </div>
         )}
         {mode === "signup" && (
-          <Field id="fullName" label="Full name" error={errors.fullName}>
+          <Field id="fullName" label="Имя и фамилия" error={errors.fullName}>
             <Input {...fieldA11y("fullName", errors.fullName)} autoComplete="name" required value={fullName} onChange={(e) => setFullName(e.target.value)} className="h-9" />
           </Field>
         )}
-        <Field id="email" label="Email" error={errors.email}>
+        <Field id="email" label="Эл. почта" error={errors.email}>
           <Input {...fieldA11y("email", errors.email)} type="email" autoComplete="email" required value={email} onChange={(e) => setEmail(e.target.value)} className="h-9" />
         </Field>
         <Field
           id="password"
-          label="Password"
+          label="Пароль"
           error={errors.password}
-          hint={mode === "signup" ? "At least 8 characters." : undefined}
+          hint={mode === "signup" ? "Не менее 8 символов." : undefined}
         >
           <Input
             {...fieldA11y("password", errors.password)}
@@ -61,24 +61,24 @@ export function AuthForm({ mode }: { mode: "login" | "signup" }) {
             className="h-9"
           />
         </Field>
-        <SubmitButton className="h-9 w-full" pendingLabel={mode === "login" ? "Signing in…" : "Creating account…"}>
-          {mode === "login" ? "Sign in" : "Create account"}
+        <SubmitButton className="h-9 w-full" pendingLabel={mode === "login" ? "Входим…" : "Создаём аккаунт…"}>
+          {mode === "login" ? "Войти" : "Создать аккаунт"}
         </SubmitButton>
       </form>
 
       <p className="text-center text-sm text-muted-foreground">
         {mode === "login" ? (
           <>
-            New to ChatSpot?{" "}
+            Впервые в ChatSpot?{" "}
             <Link href="/signup" className="font-medium text-primary hover:underline">
-              Create an account
+              Зарегистрироваться
             </Link>
           </>
         ) : (
           <>
-            Already have an account?{" "}
+            Уже есть аккаунт?{" "}
             <Link href="/login" className="font-medium text-primary hover:underline">
-              Sign in
+              Войти
             </Link>
           </>
         )}

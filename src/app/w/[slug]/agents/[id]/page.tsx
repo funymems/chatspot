@@ -13,7 +13,7 @@ import { aiStatus } from "@/lib/server/ai/provider";
 import type { EscalationRules } from "@/lib/domain/escalation";
 import { idSchema } from "@/lib/validation/automation";
 
-export const metadata: Metadata = { title: "AI Agent" };
+export const metadata: Metadata = { title: "ИИ-агент" };
 
 type Props = PageProps<"/w/[slug]/agents/[id]">;
 
@@ -52,7 +52,7 @@ async function AgentDetail({ params, searchParams }: Pick<Props, "params" | "sea
   return (
     <PageContainer className="max-w-5xl">
       <PageHeader
-        breadcrumbs={[{ label: "AI Agents", href: `/w/${slug}/agents` }, { label: agent.name }]}
+        breadcrumbs={[{ label: "ИИ-агенты", href: `/w/${slug}/agents` }, { label: agent.name }]}
         title={agent.name}
         description={agent.description || undefined}
       />

@@ -19,7 +19,7 @@ export async function listTemplates(ctx: WorkspaceContext) {
 export async function getTemplate(ctx: WorkspaceContext, id: string) {
   const db = await getDb();
   const [row] = await db.select().from(templates).where(and(eq(templates.id, id), visibleTo(ctx))).limit(1);
-  if (!row) throw notFound("Template");
+  if (!row) throw notFound("шаблон");
   return { ...row, graph: row.graph as AutomationGraph };
 }
 

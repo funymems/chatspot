@@ -65,7 +65,7 @@ async function getOwned(ctx: WorkspaceContext, id: string) {
     .from(conversations)
     .where(and(eq(conversations.id, id), eq(conversations.workspaceId, ctx.workspaceId), eq(conversations.isTest, false)))
     .limit(1);
-  if (!row) throw notFound("Conversation");
+  if (!row) throw notFound("диалог");
   return row;
 }
 
@@ -117,10 +117,10 @@ export async function setConversationStatus(ctx: WorkspaceContext, id: string, s
   const conv = await getOwned(ctx, id);
   const db = await getDb();
   await db.update(conversations).set({ status, updatedAt: new Date() }).where(eq(conversations.id, id));
-  const label = { open: "reopened", needs_human: "marked as needing a human", resolved: "resolved" }[status];
-  await db.insert(messages).values({ workspaceId: ctx.workspaceId, conversationId: id, kind: "system", source: "system", body: `Conversation ${label}`, authorUserId: ctx.userId });
+  const label = { open: "Диалог снова открыт", needs_human: "Диалог отмечен как требующий участия человека", resolved: "Диалог решён" }[status];
+  await db.insert(messages).values({ workspaceId: ctx.workspaceId, conversationId: id, kind: "system", source: "system", body: label, authorUserId: ctx.userId });
   if (status === "resolved" && conv.status !== "resolved") {
-    await recordActivity(ctx, { type: "conversation.resolved", summary: "A conversation was resolved", entityType: "conversation", entityId: id });
+    await recordActivity(ctx, { type: "conversation.resolved", summary: "Диалог решён", entityType: "conversation", entityId: id });
   }
 }
 
@@ -138,14 +138,14 @@ export async function previewAiReply(ctx: WorkspaceContext, id: string, agentId:
   await getOwned(ctx, id);
   const db = await getDb();
   const [agent] = await db.select().from(aiAgents).where(and(eq(aiAgents.id, agentId), eq(aiAgents.workspaceId, ctx.workspaceId))).limit(1);
-  if (!agent) throw notFound("AI agent");
+  if (!agent) throw notFound("ИИ-агент");
   const [lastInbound] = await db
     .select({ body: messages.body })
     .from(messages)
     .where(and(eq(messages.conversationId, id), eq(messages.kind, "inbound")))
     .orderBy(desc(messages.createdAt))
     .limit(1);
-  if (!lastInbound) throw validationError("There's no customer message to reply to yet");
+  if (!lastInbound) throw validationError("Пока нет сообщения клиента, на которое можно ответить");
   const history = await conversationHistory(id, lastInbound.body);
   const res = await generateAgentReply({ agent, message: lastInbound.body, history });
   const [row] = await db
@@ -172,7 +172,7 @@ export async function sendPreview(ctx: WorkspaceContext, conversationId: string,
     .from(messages)
     .where(and(eq(messages.id, previewId), eq(messages.conversationId, conversationId), eq(messages.kind, "generated_reply")))
     .limit(1);
-  if (!preview) throw notFound("Reply preview");
+  if (!preview) throw notFound("предпросмотр ответа");
   await getChannelProvider(conv.channel).sendMessage(
     { workspaceId: ctx.workspaceId, conversationId, contactId: conv.contactId, recipientId: null, source: "agent", agentId: preview.agentId, authorUserId: ctx.userId },
     { text },
@@ -193,7 +193,7 @@ export async function discardPreview(ctx: WorkspaceContext, conversationId: stri
 export async function simulateInbound(ctx: WorkspaceContext, id: string, text: string, eventId: string = randomUUID()) {
   const conv = await getOwned(ctx, id);
   // Never fake customer messages in a real channel: that would trigger real replies to a real person.
-  if (conv.channel !== "mock") throw validationError("Simulated messages are only available in demo-channel conversations");
+  if (conv.channel !== "mock") throw validationError("Симуляция сообщений доступна только в диалогах демо-канала");
   return handleInboundMessage({ workspaceId: ctx.workspaceId, conversationId: id, contactId: conv.contactId, channel: conv.channel, externalEventId: eventId, text });
 }
 

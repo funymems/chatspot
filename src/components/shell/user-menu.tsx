@@ -33,7 +33,7 @@ export function UserMenu({ user, slug, collapsed }: { user: ShellUser; slug: str
             "flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-sm outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             collapsed && "justify-center",
           )}
-          aria-label="Account menu"
+          aria-label="Меню аккаунта"
         >
           <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
             {initials(user.fullName, user.email[0]?.toUpperCase())}
@@ -41,7 +41,7 @@ export function UserMenu({ user, slug, collapsed }: { user: ShellUser; slug: str
           {!collapsed && (
             <>
               <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-sidebar-accent-foreground">{user.fullName || "Account"}</span>
+                <span className="block truncate font-medium text-sidebar-accent-foreground">{user.fullName || "Аккаунт"}</span>
                 <span className="block truncate text-xs text-sidebar-foreground/60">{user.email}</span>
               </span>
               <ChevronsUpDown className="size-4 text-sidebar-foreground/50" aria-hidden />
@@ -51,15 +51,15 @@ export function UserMenu({ user, slug, collapsed }: { user: ShellUser; slug: str
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-60">
         <DropdownMenuLabel>
-          <span className="block truncate">{user.fullName || "Account"}</span>
+          <span className="block truncate">{user.fullName || "Аккаунт"}</span>
           <span className="block truncate text-xs font-normal text-muted-foreground">{user.email}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuItem onSelect={() => router.push(`/w/${slug}/settings#profile`)}>
-          <UserRound aria-hidden /> Profile
+          <UserRound aria-hidden /> Профиль
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => router.push(`/w/${slug}/settings`)}>
-          <Settings aria-hidden /> Workspace settings
+          <Settings aria-hidden /> Настройки пространства
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -67,7 +67,7 @@ export function UserMenu({ user, slug, collapsed }: { user: ShellUser; slug: str
           onSelect={() => startTransition(() => signOutAction())}
           className="text-destructive focus:text-destructive"
         >
-          <LogOut aria-hidden /> {pending ? "Signing out…" : "Sign out"}
+          <LogOut aria-hidden /> {pending ? "Выходим…" : "Выйти"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

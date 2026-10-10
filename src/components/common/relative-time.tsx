@@ -26,7 +26,7 @@ function subscribe(cb: () => void) {
 const getSnapshot = () => now || Date.now();
 const getServerSnapshot = () => 0;
 
-const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
+const rtf = new Intl.RelativeTimeFormat("ru", { numeric: "auto" });
 const units: [Intl.RelativeTimeFormatUnit, number][] = [
   ["year", 31536000],
   ["month", 2592000],
@@ -38,11 +38,11 @@ const units: [Intl.RelativeTimeFormatUnit, number][] = [
 
 export function formatRelative(date: Date, from: number) {
   const diff = Math.round((date.getTime() - from) / 1000);
-  if (Math.abs(diff) < 45) return "just now";
+  if (Math.abs(diff) < 45) return "только что";
   for (const [unit, secs] of units) {
     if (Math.abs(diff) >= secs || unit === "minute") return rtf.format(Math.round(diff / secs), unit);
   }
-  return "just now";
+  return "только что";
 }
 
 /**

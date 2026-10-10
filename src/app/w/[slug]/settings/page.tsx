@@ -14,12 +14,14 @@ import { getInstagramConnection, getWebhookDiagnostics } from "@/lib/server/inte
 import { oauthErrorMessages } from "@/lib/server/integrations/instagram/oauth";
 import { WEBHOOK_PATH, appBaseUrl, missingOAuthConfig } from "@/lib/server/integrations/instagram/config";
 
-export const metadata: Metadata = { title: "Settings" };
+const roleLabels = { owner: "Владелец", admin: "Администратор", member: "Участник" } as const;
+
+export const metadata: Metadata = { title: "Настройки" };
 
 export default function SettingsPage({ params, searchParams }: PageProps<"/w/[slug]/settings">) {
   return (
     <PageContainer className="max-w-4xl">
-      <PageHeader title="Settings" description="Manage your workspace, members, integrations and profile." />
+      <PageHeader title="Настройки" description="Рабочее пространство, участники, интеграции и профиль." />
       <Suspense fallback={<SettingsSkeleton />}>
         <SettingsContent params={params} searchParams={searchParams} />
       </Suspense>
@@ -43,8 +45,8 @@ async function SettingsContent({
   const flash =
     sp.instagram === "connected"
       ? sp.instagram_warning === "webhook"
-        ? { kind: "warning" as const, text: "Instagram connected, but Meta didn't confirm the webhook subscription. Check that the app is Live and webhooks are configured, then reconnect." }
-        : { kind: "success" as const, text: "Instagram connected." }
+        ? { kind: "warning" as const, text: "Instagram подключён, но Meta не подтвердила подписку на вебхуки. Проверьте, что приложение опубликовано и вебхуки настроены, затем переподключите аккаунт." }
+        : { kind: "success" as const, text: "Instagram подключён." }
       : errorReason && errorReason in oauthErrorMessages
         ? { kind: "error" as const, text: oauthErrorMessages[errorReason] }
         : null;
@@ -55,9 +57,9 @@ async function SettingsContent({
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Workspace</CardTitle>
+          <CardTitle>Рабочее пространство</CardTitle>
           <CardDescription>
-            Everything in a workspace — automations, contacts, agents — is isolated from your other workspaces.
+            Всё в рабочем пространстве — автоматизации, контакты, агенты — отделено от других ваших пространств.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -67,17 +69,17 @@ async function SettingsContent({
 
       <Card>
         <CardHeader>
-          <CardTitle>Members</CardTitle>
-          <CardDescription>People with access to this workspace.</CardDescription>
+          <CardTitle>Участники</CardTitle>
+          <CardDescription>Люди с доступом к этому рабочему пространству.</CardDescription>
         </CardHeader>
         <CardContent>
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Name</TableHead>
-                <TableHead>Email</TableHead>
-                <TableHead>Role</TableHead>
-                <TableHead className="text-right">Joined</TableHead>
+                <TableHead>Имя</TableHead>
+                <TableHead>Эл. почта</TableHead>
+                <TableHead>Роль</TableHead>
+                <TableHead className="text-right">Добавлен</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -85,23 +87,23 @@ async function SettingsContent({
                 <TableRow key={m.userId}>
                   <TableCell className="font-medium">
                     {m.fullName || "—"}
-                    {m.userId === user.id && <span className="ml-1.5 text-xs text-muted-foreground">(you)</span>}
+                    {m.userId === user.id && <span className="ml-1.5 text-xs text-muted-foreground">(вы)</span>}
                   </TableCell>
                   <TableCell className="text-muted-foreground">{m.email}</TableCell>
                   <TableCell>
-                    <Badge variant={m.role === "owner" ? "default" : "secondary"} className="capitalize">
-                      {m.role}
+                    <Badge variant={m.role === "owner" ? "default" : "secondary"}>
+                      {roleLabels[m.role]}
                     </Badge>
                   </TableCell>
                   <TableCell className="text-right text-muted-foreground">
-                    {m.joinedAt.toLocaleDateString("en", { dateStyle: "medium" })}
+                    {m.joinedAt.toLocaleDateString("ru", { dateStyle: "medium" })}
                   </TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
           <p className="mt-3 text-xs text-muted-foreground">
-            Inviting teammates requires email delivery, which isn&apos;t configured in this local build.
+            Чтобы приглашать коллег, нужна отправка писем — она пока не настроена.
           </p>
         </CardContent>
       </Card>
@@ -134,8 +136,8 @@ async function SettingsContent({
 
       <Card id="profile">
         <CardHeader>
-          <CardTitle>Your profile</CardTitle>
-          <CardDescription>Signed in as {user.email}</CardDescription>
+          <CardTitle>Ваш профиль</CardTitle>
+          <CardDescription>Вы вошли как {user.email}</CardDescription>
         </CardHeader>
         <CardContent>
           <ProfileForm fullName={user.fullName} />
@@ -147,7 +149,7 @@ async function SettingsContent({
 
 function SettingsSkeleton() {
   return (
-    <div className="space-y-6" role="status" aria-label="Loading settings">
+    <div className="space-y-6" role="status" aria-label="Загрузка настроек">
       {[0, 1, 2].map((i) => (
         <Skeleton key={i} className="h-44 rounded-xl" />
       ))}

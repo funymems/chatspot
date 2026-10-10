@@ -6,12 +6,12 @@ type Day = { day: string; completed: number; failed: number; other: number };
 
 // Status palette (reserved; never reused as series colours). Always paired with labels.
 const series = [
-  { key: "completed", label: "Completed", color: "#0ca30c" },
-  { key: "failed", label: "Failed", color: "#d03b3b" },
-  { key: "other", label: "In progress", color: "#a1a1aa" },
+  { key: "completed", label: "Успешно", color: "#0ca30c" },
+  { key: "failed", label: "Ошибка", color: "#d03b3b" },
+  { key: "other", label: "Выполняется", color: "#a1a1aa" },
 ] as const;
 
-const fmtDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en", { month: "short", day: "numeric", timeZone: "UTC" });
+const fmtDay = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("ru", { month: "short", day: "numeric", timeZone: "UTC" });
 
 function ChartTooltip({ active, payload, label }: TooltipContentProps<number, string>) {
   if (!active || !payload?.length) return null;
@@ -30,7 +30,7 @@ function ChartTooltip({ active, payload, label }: TooltipContentProps<number, st
         );
       })}
       <p className="mt-1 border-t pt-1 text-muted-foreground">
-        Total <span className="float-right font-medium tabular-nums text-foreground">{total}</span>
+        Всего <span className="float-right font-medium tabular-nums text-foreground">{total}</span>
       </p>
     </div>
   );
@@ -47,7 +47,7 @@ export function RunsChart({ data }: { data: Day[] }) {
           </span>
         ))}
       </div>
-      <div className="h-64" role="img" aria-label={`Daily automation runs: ${total} in total. A table version follows.`}>
+      <div className="h-64" role="img" aria-label={`Запуски автоматизаций по дням: всего ${total}. Ниже есть таблица.`}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 4, right: 4, left: -16, bottom: 0 }} barCategoryGap="20%">
             <CartesianGrid vertical={false} stroke="var(--border)" />
@@ -71,12 +71,12 @@ export function RunsChart({ data }: { data: Day[] }) {
         </ResponsiveContainer>
       </div>
       <details className="text-xs">
-        <summary className="cursor-pointer text-muted-foreground">Show as table</summary>
+        <summary className="cursor-pointer text-muted-foreground">Показать таблицей</summary>
         <div className="mt-2 max-h-56 overflow-y-auto rounded-lg border">
           <table className="w-full">
             <thead className="sticky top-0 bg-muted text-left text-muted-foreground">
               <tr>
-                <th className="px-2 py-1 font-medium">Day</th>
+                <th className="px-2 py-1 font-medium">День</th>
                 {series.map((s) => (
                   <th key={s.key} className="px-2 py-1 text-right font-medium">
                     {s.label}

@@ -16,7 +16,7 @@ import type { NodeType } from "@/lib/domain/graph/schema";
 import { idSchema } from "@/lib/validation/automation";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Run" };
+export const metadata: Metadata = { title: "Запуск" };
 
 type Props = PageProps<"/w/[slug]/automations/[id]/runs/[runId]">;
 
@@ -36,10 +36,10 @@ export default function RunPage({ params }: Props) {
 }
 
 const statusIcon = {
-  success: <CheckCircle2 className="size-4 text-success" aria-label="Succeeded" />,
-  failed: <XCircle className="size-4 text-destructive" aria-label="Failed" />,
-  waiting: <Clock className="size-4 text-amber-600" aria-label="Waiting" />,
-  skipped: <MinusCircle className="size-4 text-muted-foreground" aria-label="Skipped" />,
+  success: <CheckCircle2 className="size-4 text-success" aria-label="Успешно" />,
+  failed: <XCircle className="size-4 text-destructive" aria-label="Ошибка" />,
+  waiting: <Clock className="size-4 text-amber-600" aria-label="Ожидание" />,
+  skipped: <MinusCircle className="size-4 text-muted-foreground" aria-label="Пропущено" />,
 } as const;
 
 function Json({ value }: { value: unknown }) {
@@ -70,9 +70,9 @@ async function RunDetail({ params }: { params: Props["params"] }) {
     <PageContainer className="max-w-5xl">
       <PageHeader
         breadcrumbs={[
-          { label: "Automations", href: `/w/${slug}/automations` },
+          { label: "Автоматизации", href: `/w/${slug}/automations` },
           { label: automation.name, href: `/w/${slug}/automations/${automation.id}` },
-          { label: "Run" },
+          { label: "Запуск" },
         ]}
         title={
           <span className="flex items-center gap-3">
@@ -81,8 +81,8 @@ async function RunDetail({ params }: { params: Props["params"] }) {
         }
         description={
           <>
-            {exec.mode === "test" ? "Test run" : "Live run"} on version v{version.version} · started <RelativeTime date={exec.createdAt} /> ·{" "}
-            {exec.stepCount} steps{durationMs !== null ? ` · ${(durationMs / 1000).toFixed(1)}s` : ""}
+            {exec.mode === "test" ? "Тестовый запуск" : "Реальный запуск"} версии v{version.version} · начат <RelativeTime date={exec.createdAt} /> ·{" "}
+            шагов: {exec.stepCount}{durationMs !== null ? ` · ${(durationMs / 1000).toFixed(1)} с` : ""}
           </>
         }
         actions={exec.status === "failed" ? <RetryRunButton slug={slug} automationId={automation.id} executionId={exec.id} /> : undefined}
@@ -90,19 +90,19 @@ async function RunDetail({ params }: { params: Props["params"] }) {
 
       {exec.error && (
         <p className="rounded-lg border border-destructive/30 bg-destructive/5 p-3 text-sm text-destructive">
-          <span className="font-medium">Failed{exec.errorNodeId ? ` at “${nodeName(exec.errorNodeId, "")}”` : ""}:</span> {exec.error}
+          <span className="font-medium">Ошибка{exec.errorNodeId ? ` в блоке «${nodeName(exec.errorNodeId, "")}»` : ""}:</span> {exec.error}
         </p>
       )}
 
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Node log</CardTitle>
-            <CardDescription>Every step with its input, output and timing.</CardDescription>
+            <CardTitle>Журнал шагов</CardTitle>
+            <CardDescription>Каждый шаг с входными и выходными данными и временем выполнения.</CardDescription>
           </CardHeader>
           <CardContent>
             {logs.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No steps were executed.</p>
+              <p className="text-sm text-muted-foreground">Ни один шаг не выполнен.</p>
             ) : (
               <ol className="space-y-2">
                 {logs.map((l) => (
@@ -114,21 +114,21 @@ async function RunDetail({ params }: { params: Props["params"] }) {
                         <span className="text-xs text-muted-foreground">{nodeMeta[l.nodeType as NodeType]?.label}</span>
                         {l.branch && (
                           <span className={cn("rounded px-1.5 text-xs font-medium", l.branch === "true" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive")}>
-                            {l.branch === "true" ? "Yes" : "No"}
+                            {l.branch === "true" ? "Да" : "Нет"}
                           </span>
                         )}
-                        <span className="ml-auto text-xs tabular-nums text-muted-foreground">{l.durationMs ?? 0} ms</span>
+                        <span className="ml-auto text-xs tabular-nums text-muted-foreground">{l.durationMs ?? 0} мс</span>
                       </summary>
                       {l.error && <p className="mt-2 text-xs text-destructive">{l.error}</p>}
                       {l.input !== null && (
                         <div className="mt-2 text-xs">
-                          <span className="text-muted-foreground">Input</span>
+                          <span className="text-muted-foreground">Вход</span>
                           <Json value={l.input} />
                         </div>
                       )}
                       {l.output !== null && (
                         <div className="mt-2 text-xs">
-                          <span className="text-muted-foreground">Output</span>
+                          <span className="text-muted-foreground">Выход</span>
                           <Json value={l.output} />
                         </div>
                       )}
@@ -143,12 +143,12 @@ async function RunDetail({ params }: { params: Props["params"] }) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Messages sent</CardTitle>
-              <CardDescription>Simulated — no external channel is connected.</CardDescription>
+              <CardTitle>Отправленные сообщения</CardTitle>
+              <CardDescription>Сообщения, которые отправил этот запуск.</CardDescription>
             </CardHeader>
             <CardContent>
               {transcript.length === 0 ? (
-                <p className="text-sm text-muted-foreground">This run didn&apos;t send any messages.</p>
+                <p className="text-sm text-muted-foreground">Этот запуск не отправил ни одного сообщения.</p>
               ) : (
                 <ul className="space-y-2">
                   {transcript.map((m) => (
@@ -163,16 +163,16 @@ async function RunDetail({ params }: { params: Props["params"] }) {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Input & variables</CardTitle>
+              <CardTitle>Входные данные и переменные</CardTitle>
             </CardHeader>
             <CardContent className="space-y-2 text-xs">
-              <span className="text-muted-foreground">Input</span>
+              <span className="text-muted-foreground">Вход</span>
               <Json value={exec.input} />
-              <span className="text-muted-foreground">Variables at end</span>
+              <span className="text-muted-foreground">Переменные в конце</span>
               <Json value={(exec.state as { vars?: unknown }).vars ?? {}} />
               {exec.result !== null && (
                 <>
-                  <span className="text-muted-foreground">Result</span>
+                  <span className="text-muted-foreground">Результат</span>
                   <Json value={exec.result} />
                 </>
               )}

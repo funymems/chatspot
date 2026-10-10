@@ -2,10 +2,10 @@ import { Bot, GitBranch, Users, Workflow } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 
 const points = [
-  { icon: Workflow, title: "Visual automation builder", text: "Design conversation flows with triggers, conditions and actions." },
-  { icon: Bot, title: "AI agents grounded in your knowledge", text: "Answers come from your own docs and FAQs, with human handoff." },
-  { icon: Users, title: "Built-in CRM", text: "Every conversation enriches a contact with tags and fields." },
-  { icon: GitBranch, title: "Safe testing", text: "Simulate events end-to-end before anything goes live." },
+  { icon: Workflow, title: "Визуальный конструктор автоматизаций", text: "Собирайте сценарии диалогов из триггеров, условий и действий." },
+  { icon: Bot, title: "ИИ-агенты на основе ваших знаний", text: "Ответы берутся из ваших документов и FAQ, а сложные вопросы передаются человеку." },
+  { icon: Users, title: "Встроенная CRM", text: "Каждый диалог дополняет карточку контакта тегами и полями." },
+  { icon: GitBranch, title: "Безопасное тестирование", text: "Проверяйте сценарии от начала до конца, прежде чем запускать их." },
 ];
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
@@ -19,7 +19,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
         <Logo inverted />
         <div className="relative mt-auto max-w-md space-y-8">
           <h1 className="text-3xl font-semibold tracking-tight text-white">
-            Turn every conversation into an automated workflow.
+            Превратите каждый диалог в автоматический сценарий.
           </h1>
           <ul className="space-y-5">
             {points.map(({ icon: Icon, title, text }) => (
@@ -36,7 +36,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           </ul>
         </div>
         <p className="relative mt-12 text-xs text-sidebar-foreground/50">
-          Local development build · messages are simulated, no external channels are connected.
+          ChatSpot · автоматизация Instagram Direct, CRM и ИИ-агенты в одном месте.
         </p>
       </aside>
       <main className="flex items-center justify-center px-4 py-12 sm:px-8">

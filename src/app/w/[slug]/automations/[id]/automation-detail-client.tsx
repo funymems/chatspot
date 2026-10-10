@@ -41,7 +41,7 @@ export function AutomationHeaderActions({
       variant={isLive ? "outline" : "default"}
     >
       {isLive ? <Pause aria-hidden /> : <Play aria-hidden />}
-      {isLive ? "Deactivate" : "Activate"}
+      {isLive ? "Выключить" : "Включить"}
     </Button>
   );
 
@@ -52,24 +52,24 @@ export function AutomationHeaderActions({
           <TooltipTrigger asChild>
             <span tabIndex={0}>{activateButton}</span>
           </TooltipTrigger>
-          <TooltipContent>Fix the validation problems first</TooltipContent>
+          <TooltipContent>Сначала исправьте ошибки в сценарии</TooltipContent>
         </Tooltip>
       ) : (
         activateButton
       )}
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="outline" size="icon" aria-label="More actions" disabled={m.pending}>
+          <Button variant="outline" size="icon" aria-label="Другие действия" disabled={m.pending}>
             <MoreHorizontal />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-48">
           <DropdownMenuItem onSelect={() => m.duplicate(automation)}>
-            <Copy aria-hidden /> Duplicate
+            <Copy aria-hidden /> Создать копию
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setConfirmDelete(true)} className="text-destructive focus:text-destructive">
-            <Trash2 aria-hidden /> Delete
+            <Trash2 aria-hidden /> Удалить
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
@@ -106,20 +106,20 @@ export function AutomationDetailsForm({ slug, id, name, description }: { slug: s
         });
       }}
     >
-      <Field id="a-name" label="Name" error={errors.name}>
+      <Field id="a-name" label="Название" error={errors.name}>
         <Input {...fieldA11y("a-name", errors.name)} value={values.name} onChange={(e) => setValues((v) => ({ ...v, name: e.target.value }))} />
       </Field>
-      <Field id="a-description" label="Description" error={errors.description}>
+      <Field id="a-description" label="Описание" error={errors.description}>
         <Textarea
           {...fieldA11y("a-description", errors.description)}
           rows={3}
           value={values.description}
           onChange={(e) => setValues((v) => ({ ...v, description: e.target.value }))}
-          placeholder="What does this automation do?"
+          placeholder="Что делает эта автоматизация?"
         />
       </Field>
       <Button type="submit" size="sm" disabled={!dirty || pending}>
-        {pending ? "Saving…" : "Save details"}
+        {pending ? "Сохраняем…" : "Сохранить"}
       </Button>
     </form>
   );

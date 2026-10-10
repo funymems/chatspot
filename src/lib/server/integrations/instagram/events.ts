@@ -180,7 +180,7 @@ export async function processInstagramEvents(events: NormalizedIgEvent[]) {
 
     if (ev.kind === "message" && ev.senderId && ev.senderId !== ev.accountId) {
       const { contactId, conversationId } = await ensureInstagramThread(conn.workspaceId, ev.senderId, conn.token);
-      const body = ev.text ?? (ev.attachments ? `[${ev.attachments} attachment${ev.attachments === 1 ? "" : "s"}]` : "[unsupported message]");
+      const body = ev.text ?? (ev.attachments ? `[вложений: ${ev.attachments}]` : "[неподдерживаемое сообщение]");
       await storeInboundMessage(conn.workspaceId, conversationId, contactId, body, { eventId: ev.eventId, channel: "instagram" });
       stored++;
       // Automations reply only when the workspace explicitly enabled it (Settings → Instagram).
@@ -218,12 +218,12 @@ async function ensureInstagramThread(workspaceId: string, igsid: string, encrypt
       }
     }
     const display = name || username;
-    const [first, ...rest] = display ? display.split(/\s+/) : ["Instagram user"];
+    const [first, ...rest] = display ? display.split(/\s+/) : ["Пользователь"];
     [contact] = await db
       .insert(contacts)
       .values({
         workspaceId,
-        firstName: first ?? "Instagram user",
+        firstName: first ?? "Пользователь",
         lastName: display ? rest.join(" ") : igsid.slice(-4),
         source: "instagram",
         channelUserId: igsid,

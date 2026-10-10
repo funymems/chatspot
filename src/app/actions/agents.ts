@@ -35,7 +35,7 @@ export async function createAgentAction(slug: string, input: unknown): Promise<A
   return runAction("agent.create", async () => {
     const ctx = await authorizeWorkspace(slug);
     const agent = await createAgent(ctx, parseInput(createAgentSchema, input));
-    return { ok: true, data: { id: agent.id }, message: `Agent “${agent.name}” created` };
+    return { ok: true, data: { id: agent.id }, message: `Агент «${agent.name}» создан` };
   });
 }
 
@@ -55,7 +55,7 @@ export async function updateAgentAction(slug: string, agentId: string, section: 
       });
     }
     refresh();
-    return { ok: true, data: null, message: "Agent saved" };
+    return { ok: true, data: null, message: "Агент сохранён" };
   });
 }
 
@@ -63,7 +63,7 @@ export async function deleteAgentAction(slug: string, agentId: string): Promise<
   return runAction("agent.delete", async () => {
     const ctx = await authorizeWorkspace(slug);
     await deleteAgent(ctx, idSchema.parse(agentId));
-    return { ok: true, data: null, message: "Agent deleted" };
+    return { ok: true, data: null, message: "Агент удалён" };
   });
 }
 
@@ -76,7 +76,7 @@ export async function addKnowledgeAction(slug: string, agentId: string, kind: "t
     if (kind === "qa") await addKnowledgeQa(ctx, id, parseInput(knowledgeQaSchema, input));
     else await addKnowledgeText(ctx, id, parseInput(knowledgeTextSchema, input));
     refresh();
-    return { ok: true, data: null, message: kind === "qa" ? "Q&A added" : "Document added" };
+    return { ok: true, data: null, message: kind === "qa" ? "Вопрос-ответ добавлен" : "Документ добавлен" };
   });
 }
 
@@ -88,12 +88,12 @@ export async function uploadKnowledgeFileAction(slug: string, agentId: string, f
   return runAction("knowledge.upload", async () => {
     const ctx = await authorizeWorkspace(slug);
     const file = formData.get("file");
-    if (!(file instanceof File) || file.size === 0) throw validationError("Choose a file to upload");
+    if (!(file instanceof File) || file.size === 0) throw validationError("Выберите файл для загрузки");
     const ext = file.name.slice(file.name.lastIndexOf(".")).toLowerCase();
-    if (!ALLOWED.includes(ext)) throw validationError(`Supported formats: ${ALLOWED.join(", ")}. PDF and Word aren't supported yet.`);
-    if (file.size > MAX_UPLOAD_BYTES) throw validationError("Files are limited to 1 MB");
+    if (!ALLOWED.includes(ext)) throw validationError(`Поддерживаемые форматы: ${ALLOWED.join(", ")}. PDF и Word пока не поддерживаются.`);
+    if (file.size > MAX_UPLOAD_BYTES) throw validationError("Размер файла — не более 1 МБ");
     const text = new TextDecoder("utf-8", { fatal: false }).decode(await file.arrayBuffer()).replace(/\u0000/g, "");
-    if (!text.trim()) throw validationError("The file is empty");
+    if (!text.trim()) throw validationError("Файл пустой");
     await addKnowledgeText(ctx, idSchema.parse(agentId), {
       title: file.name.slice(0, 120),
       content: text.slice(0, 50_000),
@@ -101,7 +101,7 @@ export async function uploadKnowledgeFileAction(slug: string, agentId: string, f
       mimeType: file.type || "text/plain",
     });
     refresh();
-    return { ok: true, data: null, message: `“${file.name}” added to the knowledge base` };
+    return { ok: true, data: null, message: `«${file.name}» добавлен в базу знаний` };
   });
 }
 
@@ -113,7 +113,7 @@ export async function updateKnowledgeAction(slug: string, sourceId: string, inpu
       .parse(input);
     await updateKnowledgeSource(ctx, idSchema.parse(sourceId), data);
     refresh();
-    return { ok: true, data: null, message: "Source updated" };
+    return { ok: true, data: null, message: "Источник обновлён" };
   });
 }
 
@@ -122,7 +122,7 @@ export async function deleteKnowledgeAction(slug: string, sourceId: string): Pro
     const ctx = await authorizeWorkspace(slug);
     await deleteKnowledgeSource(ctx, idSchema.parse(sourceId));
     refresh();
-    return { ok: true, data: null, message: "Source removed" };
+    return { ok: true, data: null, message: "Источник удалён" };
   });
 }
 
@@ -134,7 +134,7 @@ export async function testRetrievalAction(
   return runAction("knowledge.test", async () => {
     const ctx = await authorizeWorkspace(slug);
     const agent = await getAgent(ctx, idSchema.parse(agentId));
-    const q = z.string().trim().min(1, "Type a question").max(500).parse(question);
+    const q = z.string().trim().min(1, "Введите вопрос").max(500).parse(question);
     const hits = await searchKnowledge(ctx.workspaceId, agent.id, q, 5);
     return { ok: true, data: hits.map((h) => ({ title: h.title, content: h.content, rank: h.rank })) };
   });
@@ -145,7 +145,7 @@ export async function resolveUnansweredAction(slug: string, questionId: string, 
     const ctx = await authorizeWorkspace(slug);
     await resolveUnanswered(ctx, idSchema.parse(questionId), z.string().max(4000).parse(answer));
     refresh();
-    return { ok: true, data: null, message: answer.trim() ? "Answer added to the knowledge base" : "Marked as resolved" };
+    return { ok: true, data: null, message: answer.trim() ? "Ответ добавлен в базу знаний" : "Отмечено как решённое" };
   });
 }
 
@@ -166,7 +166,7 @@ export async function resetAgentChatAction(slug: string, agentId: string): Promi
     const ctx = await authorizeWorkspace(slug);
     await resetAgentTestChat(ctx, idSchema.parse(agentId));
     refresh();
-    return { ok: true, data: null, message: "Conversation reset" };
+    return { ok: true, data: null, message: "Диалог сброшен" };
   });
 }
 
@@ -175,7 +175,7 @@ export async function resetAgentChatAction(slug: string, agentId: string): Promi
 export async function generateFlowAction(slug: string, description: string): Promise<ActionResult<GeneratedFlow>> {
   return runAction("flow.generate", async () => {
     const ctx = await authorizeWorkspace(slug);
-    const d = z.string().trim().min(15, "Describe the automation in at least a sentence").max(2000).parse(description);
+    const d = z.string().trim().min(15, "Опишите автоматизацию хотя бы одним предложением").max(2000).parse(description);
     return { ok: true, data: await generateFlow(ctx, d) };
   });
 }

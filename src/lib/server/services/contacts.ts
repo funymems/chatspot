@@ -108,7 +108,7 @@ export async function listTags(ctx: WorkspaceContext) {
 async function getOwned(ctx: WorkspaceContext, id: string) {
   const db = await getDb();
   const [row] = await db.select().from(contacts).where(and(eq(contacts.id, id), eq(contacts.workspaceId, ctx.workspaceId))).limit(1);
-  if (!row) throw notFound("Contact");
+  if (!row) throw notFound("контакт");
   return row;
 }
 
@@ -172,7 +172,7 @@ export type ContactInput = {
 };
 
 export async function createContact(ctx: WorkspaceContext, input: ContactInput & { tags?: string[] }) {
-  if (!input.firstName && !input.lastName && !input.email && !input.phone) throw validationError("Add at least a name, email or phone");
+  if (!input.firstName && !input.lastName && !input.email && !input.phone) throw validationError("Укажите хотя бы имя, эл. почту или телефон");
   const db = await getDb();
   const [row] = await db
     .insert(contacts)
@@ -181,7 +181,7 @@ export async function createContact(ctx: WorkspaceContext, input: ContactInput &
   for (const t of input.tags ?? []) await addTagToContact(ctx.workspaceId, row!.id, t);
   await recordActivity(ctx, {
     type: "contact.created",
-    summary: `Contact “${[row!.firstName, row!.lastName].filter(Boolean).join(" ") || row!.email || row!.phone}” added`,
+    summary: `Добавлен контакт «${[row!.firstName, row!.lastName].filter(Boolean).join(" ") || row!.email || row!.phone}»`,
     entityType: "contact",
     entityId: row!.id,
   });
@@ -205,7 +205,7 @@ export async function setCustomFields(ctx: WorkspaceContext, id: string, fields:
 
 export async function addContactTag(ctx: WorkspaceContext, id: string, tag: string) {
   await getOwned(ctx, id);
-  if (!tag.trim()) throw validationError("Tag can't be empty");
+  if (!tag.trim()) throw validationError("Тег не может быть пустым");
   await addTagToContact(ctx.workspaceId, id, tag);
 }
 
@@ -218,7 +218,7 @@ export async function deleteContact(ctx: WorkspaceContext, id: string) {
   const c = await getOwned(ctx, id);
   const db = await getDb();
   await db.delete(contacts).where(and(eq(contacts.id, id), eq(contacts.workspaceId, ctx.workspaceId)));
-  await recordActivity(ctx, { type: "contact.deleted", summary: `Contact “${[c.firstName, c.lastName].filter(Boolean).join(" ") || c.email || "unnamed"}” deleted`, entityType: "contact" });
+  await recordActivity(ctx, { type: "contact.deleted", summary: `Удалён контакт «${[c.firstName, c.lastName].filter(Boolean).join(" ") || c.email || "без имени"}»`, entityType: "contact" });
 }
 
 /**
@@ -227,9 +227,9 @@ export async function deleteContact(ctx: WorkspaceContext, id: string) {
  * fields are combined (primary wins), and the duplicate is marked merged.
  */
 export async function mergeContacts(ctx: WorkspaceContext, primaryId: string, duplicateId: string) {
-  if (primaryId === duplicateId) throw validationError("Choose two different contacts");
+  if (primaryId === duplicateId) throw validationError("Выберите два разных контакта");
   const [primary, dup] = await Promise.all([getOwned(ctx, primaryId), getOwned(ctx, duplicateId)]);
-  if (primary.mergedIntoId || dup.mergedIntoId) throw conflict("One of these contacts was already merged");
+  if (primary.mergedIntoId || dup.mergedIntoId) throw conflict("Один из этих контактов уже объединён");
   const db = await getDb();
   await db.transaction(async (tx) => {
     await tx.update(conversations).set({ contactId: primary.id }).where(and(eq(conversations.workspaceId, ctx.workspaceId), eq(conversations.contactId, dup.id)));
@@ -260,7 +260,7 @@ export async function mergeContacts(ctx: WorkspaceContext, primaryId: string, du
   });
   await recordActivity(ctx, {
     type: "contact.merged",
-    summary: `Merged a duplicate into “${[primary.firstName, primary.lastName].filter(Boolean).join(" ") || primary.email}”`,
+    summary: `Дубликат объединён с контактом «${[primary.firstName, primary.lastName].filter(Boolean).join(" ") || primary.email}»`,
     entityType: "contact",
     entityId: primary.id,
   });

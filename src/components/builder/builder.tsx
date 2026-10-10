@@ -191,7 +191,7 @@ function BuilderInner({ slug, automation, graph: initialGraph, agents, automatio
   const addAt = useCallback(
     (type: NodeType, position?: { x: number; y: number }) => {
       if (type === "trigger" && graph.nodes.some((n) => n.type === "trigger")) {
-        toast.error("A flow can only have one trigger");
+        toast.error("В сценарии может быть только один триггер");
         return;
       }
       let pos = position;
@@ -219,7 +219,7 @@ function BuilderInner({ slug, automation, graph: initialGraph, agents, automatio
     if (!selectedId) return;
     const res = duplicateNode(graph, selectedId);
     if (res) commit(res.graph, { select: res.id });
-    else toast.error("The trigger can't be duplicated");
+    else toast.error("Триггер нельзя скопировать");
   }, [graph, selectedId, commit]);
 
   // ── Saving / publishing ──
@@ -236,7 +236,7 @@ function BuilderInner({ slug, automation, graph: initialGraph, agents, automatio
         setRevision(res.data.revision);
         setStatus(res.data.status as AutomationStatusValue);
         setUnpublished(res.data.hasUnpublishedChanges);
-        if (!then) toast.success(res.message ?? "Saved");
+        if (!then) toast.success(res.message ?? "Сохранено");
         then?.();
       }),
     [graph, revision, slug, automation.id],
@@ -302,7 +302,7 @@ function BuilderInner({ slug, automation, graph: initialGraph, agents, automatio
   };
 
   const leave = (href: string) => {
-    if (dirty && !window.confirm("You have unsaved changes. Leave without saving?")) return;
+    if (dirty && !window.confirm("Есть несохранённые изменения. Уйти без сохранения?")) return;
     router.push(href);
   };
 
@@ -310,7 +310,7 @@ function BuilderInner({ slug, automation, graph: initialGraph, agents, automatio
     <div className="flex h-full flex-col bg-background">
       {/* Toolbar */}
       <header className="flex h-14 shrink-0 items-center gap-2 border-b bg-card px-3">
-        <Button variant="ghost" size="icon-sm" onClick={() => leave(`/w/${slug}/automations/${automation.id}`)} aria-label="Back to automation">
+        <Button variant="ghost" size="icon-sm" onClick={() => leave(`/w/${slug}/automations/${automation.id}`)} aria-label="Назад к автоматизации">
           <ArrowLeft />
         </Button>
         <div className="flex min-w-0 items-center gap-2">
@@ -318,42 +318,42 @@ function BuilderInner({ slug, automation, graph: initialGraph, agents, automatio
           <AutomationStatusBadge status={status} />
         </div>
         <span className="ml-1 hidden text-xs text-muted-foreground sm:inline" aria-live="polite">
-          {saving ? "Saving…" : dirty ? "Unsaved changes" : status === "active" && unpublished ? "Saved · not published" : "All changes saved"}
+          {saving ? "Сохраняем…" : dirty ? "Есть несохранённые изменения" : status === "active" && unpublished ? "Сохранено · не опубликовано" : "Все изменения сохранены"}
         </span>
 
         <div className="ml-auto flex items-center gap-1.5">
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm" onClick={() => dispatch({ type: "undo" })} disabled={state.past.length === 0} aria-label="Undo">
+              <Button variant="ghost" size="icon-sm" onClick={() => dispatch({ type: "undo" })} disabled={state.past.length === 0} aria-label="Отменить">
                 <Undo2 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Undo (Ctrl+Z)</TooltipContent>
+            <TooltipContent>Отменить (Ctrl+Z)</TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon-sm" onClick={() => dispatch({ type: "redo" })} disabled={state.future.length === 0} aria-label="Redo">
+              <Button variant="ghost" size="icon-sm" onClick={() => dispatch({ type: "redo" })} disabled={state.future.length === 0} aria-label="Повторить">
                 <Redo2 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent>Redo (Ctrl+Shift+Z)</TooltipContent>
+            <TooltipContent>Повторить (Ctrl+Shift+Z)</TooltipContent>
           </Tooltip>
 
           <IssuesButton errors={errors} warnings={warnings} graph={graph} onSelect={focusIssue} />
           {toolbarExtra}
           <Button variant="outline" size="sm" onClick={() => save()} disabled={!dirty || saving}>
-            {saving ? <Loader2 className="animate-spin" aria-hidden /> : <Save aria-hidden />} Save
+            {saving ? <Loader2 className="animate-spin" aria-hidden /> : <Save aria-hidden />} Сохранить
           </Button>
           {(status !== "active" || unpublished || dirty) && (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span tabIndex={errors.length ? 0 : -1}>
                   <Button size="sm" onClick={publish} disabled={saving || errors.length > 0}>
-                    <Play aria-hidden /> {status === "active" ? "Publish changes" : "Activate"}
+                    <Play aria-hidden /> {status === "active" ? "Опубликовать изменения" : "Включить"}
                   </Button>
                 </span>
               </TooltipTrigger>
-              <TooltipContent>{errors.length ? "Fix the problems first" : "Save and make this version live"}</TooltipContent>
+              <TooltipContent>{errors.length ? "Сначала исправьте ошибки" : "Сохранить и запустить эту версию"}</TooltipContent>
             </Tooltip>
           )}
         </div>
@@ -399,7 +399,7 @@ function BuilderInner({ slug, automation, graph: initialGraph, agents, automatio
             snapGrid={[10, 10]}
             defaultEdgeOptions={{ type: "smoothstep" }}
             proOptions={{ hideAttribution: true }}
-            aria-label="Flow canvas"
+            aria-label="Холст сценария"
           >
             <Background gap={20} size={1} />
             <Controls position="bottom-left" />
@@ -408,13 +408,13 @@ function BuilderInner({ slug, automation, graph: initialGraph, agents, automatio
           {graph.nodes.length === 0 && (
             <div className="pointer-events-none absolute inset-0 flex items-center justify-center">
               <p className="rounded-lg border bg-card px-4 py-3 text-sm text-muted-foreground shadow-sm">
-                Drag a <span className="font-medium text-foreground">Trigger</span> from the palette to start your flow.
+                Перетащите <span className="font-medium text-foreground">Триггер</span> из панели слева, чтобы начать сценарий.
               </p>
             </div>
           )}
         </div>
 
-        <aside className={cn("w-[340px] shrink-0 border-l bg-card", selected ? "block" : "hidden xl:block")} aria-label="Node settings">
+        <aside className={cn("w-[340px] shrink-0 border-l bg-card", selected ? "block" : "hidden xl:block")} aria-label="Настройки блока">
           {selected ? (
             <NodeConfigPanel
               key={selected.id}
@@ -456,9 +456,9 @@ function IssueList({ issues, graph, onSelect }: { issues: GraphIssue[]; graph: A
               className="flex w-full items-start gap-2 px-3 py-2 text-left text-xs hover:bg-muted/60 disabled:cursor-default disabled:hover:bg-transparent"
             >
               {issue.severity === "error" ? (
-                <CircleAlert className="mt-px size-3.5 shrink-0 text-destructive" aria-label="Error" />
+                <CircleAlert className="mt-px size-3.5 shrink-0 text-destructive" aria-label="Ошибка" />
               ) : (
-                <AlertTriangle className="mt-px size-3.5 shrink-0 text-amber-600" aria-label="Warning" />
+                <AlertTriangle className="mt-px size-3.5 shrink-0 text-amber-600" aria-label="Предупреждение" />
               )}
               <span>
                 {issue.message}
@@ -487,20 +487,20 @@ function IssuesButton({
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <Button variant="ghost" size="sm" className={cn(errors.length ? "text-destructive" : "text-success")} aria-label="Validation results">
+        <Button variant="ghost" size="sm" className={cn(errors.length ? "text-destructive" : "text-success")} aria-label="Результаты проверки">
           {errors.length ? <CircleAlert aria-hidden /> : <CheckCircle2 aria-hidden />}
-          {errors.length ? `${errors.length} problem${errors.length === 1 ? "" : "s"}` : "Valid"}
+          {errors.length ? `Ошибок: ${errors.length}` : "Без ошибок"}
           {warnings.length > 0 && <span className="text-amber-600">· {warnings.length}</span>}
         </Button>
       </PopoverTrigger>
       <PopoverContent align="end" className="w-96 p-0">
-        <div className="border-b px-3 py-2 text-sm font-medium">{total === 0 ? "No problems found" : "Validation"}</div>
+        <div className="border-b px-3 py-2 text-sm font-medium">{total === 0 ? "Ошибок не найдено" : "Проверка"}</div>
         {total > 0 ? (
           <div className="max-h-80 overflow-y-auto">
             <IssueList issues={[...errors, ...warnings]} graph={graph} onSelect={onSelect} />
           </div>
         ) : (
-          <p className="px-3 py-3 text-xs text-muted-foreground">This flow can be activated.</p>
+          <p className="px-3 py-3 text-xs text-muted-foreground">Этот сценарий можно включить.</p>
         )}
       </PopoverContent>
     </Popover>
@@ -521,9 +521,9 @@ function FlowOverview({
   return (
     <div className="flex h-full flex-col">
       <div className="border-b px-4 py-3">
-        <p className="text-sm font-semibold">Flow</p>
+        <p className="text-sm font-semibold">Сценарий</p>
         <p className="text-xs text-muted-foreground">
-          {graph.nodes.length} nodes · {graph.edges.length} connections. Select a node to configure it.
+          Блоков: {graph.nodes.length} · связей: {graph.edges.length}. Выберите блок, чтобы настроить его.
         </p>
       </div>
       <div className="flex-1 overflow-y-auto">
@@ -531,14 +531,14 @@ function FlowOverview({
           <IssueList issues={[...errors, ...warnings]} graph={graph} onSelect={onSelect} />
         ) : (
           <p className="flex items-center gap-2 px-4 py-3 text-sm text-success">
-            <CheckCircle2 className="size-4" aria-hidden /> No problems found
+            <CheckCircle2 className="size-4" aria-hidden /> Ошибок не найдено
           </p>
         )}
       </div>
       <div className="space-y-1 border-t px-4 py-3 text-xs text-muted-foreground">
-        <p className="font-medium text-foreground">Shortcuts</p>
-        <p>Ctrl+S save · Ctrl+Z undo · Ctrl+Shift+Z redo</p>
-        <p>Ctrl+D duplicate · Del delete · Esc deselect</p>
+        <p className="font-medium text-foreground">Горячие клавиши</p>
+        <p>Ctrl+S — сохранить · Ctrl+Z — отменить · Ctrl+Shift+Z — повторить</p>
+        <p>Ctrl+D — копировать · Del — удалить · Esc — снять выделение</p>
       </div>
     </div>
   );

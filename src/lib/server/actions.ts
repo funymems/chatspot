@@ -15,14 +15,14 @@ export async function runAction<T>(name: string, fn: () => Promise<ActionResult<
   } catch (err) {
     unstable_rethrow(err); // let redirect()/notFound() propagate
     if (err instanceof z.ZodError) {
-      return { ok: false, error: "Please fix the highlighted fields", fieldErrors: z.flattenError(err).fieldErrors };
+      return { ok: false, error: "Исправьте отмеченные поля", fieldErrors: z.flattenError(err).fieldErrors };
     }
     if (err instanceof AppError) {
       if (err.code === "internal") logger.error("action.failed", { action: name, err });
       return { ok: false, error: err.message, fieldErrors: err.fieldErrors };
     }
     logger.error("action.failed", { action: name, err });
-    return { ok: false, error: "Something went wrong. Please try again." };
+    return { ok: false, error: "Что-то пошло не так. Попробуйте ещё раз." };
   }
 }
 

@@ -50,7 +50,7 @@ export function NewAutomationButton({
       <Button variant={variant} size={size} className={className} onClick={() => setOpen(true)}>
         {children ?? (
           <>
-            <Plus aria-hidden /> New automation
+            <Plus aria-hidden /> Новая автоматизация
           </>
         )}
       </Button>
@@ -126,9 +126,9 @@ function CreateAutomationDialog({
   };
 
   const modes: { id: Mode; label: string; icon: typeof Plus; hint: string; disabled?: boolean }[] = [
-    { id: "scratch", label: "From scratch", icon: FilePlus2, hint: "Start with a simple starter flow" },
-    { id: "template", label: "From template", icon: LayoutTemplate, hint: `${templates.length} ready-made flows` },
-    { id: "ai", label: "Describe it", icon: PenLine, hint: "AI drafts the flow for you" },
+    { id: "scratch", label: "С нуля", icon: FilePlus2, hint: "Простой базовый сценарий" },
+    { id: "template", label: "Из шаблона", icon: LayoutTemplate, hint: `Готовых сценариев: ${templates.length}` },
+    { id: "ai", label: "По описанию", icon: PenLine, hint: "ИИ соберёт черновик сценария" },
   ];
 
   return (
@@ -136,11 +136,11 @@ function CreateAutomationDialog({
       <DialogContent className="sm:max-w-2xl">
         <form onSubmit={submit} className="space-y-5">
           <DialogHeader>
-            <DialogTitle>New automation</DialogTitle>
-            <DialogDescription>New automations start as drafts. Nothing runs until you activate it.</DialogDescription>
+            <DialogTitle>Новая автоматизация</DialogTitle>
+            <DialogDescription>Новая автоматизация создаётся как черновик и не работает, пока вы её не включите.</DialogDescription>
           </DialogHeader>
 
-          <div role="radiogroup" aria-label="How to start" className="grid gap-2 sm:grid-cols-3">
+          <div role="radiogroup" aria-label="Способ создания" className="grid gap-2 sm:grid-cols-3">
             {modes.map((m) => (
               <button
                 key={m.id}
@@ -171,22 +171,22 @@ function CreateAutomationDialog({
 
           {mode === "scratch" && (
             <div className="space-y-4">
-              <Field id="automation-name" label="Name" error={errors.name}>
+              <Field id="automation-name" label="Название" error={errors.name}>
                 <Input
                   {...fieldA11y("automation-name", errors.name)}
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="e.g. Course inquiries"
+                  placeholder="Например, вопросы о курсе"
                   autoFocus
                 />
               </Field>
-              <Field id="automation-description" label="Description (optional)" error={errors.description}>
+              <Field id="automation-description" label="Описание (необязательно)" error={errors.description}>
                 <Textarea
                   {...fieldA11y("automation-description", errors.description)}
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={2}
-                  placeholder="What does this automation do?"
+                  placeholder="Что делает эта автоматизация?"
                 />
               </Field>
             </div>
@@ -194,7 +194,7 @@ function CreateAutomationDialog({
 
           {mode === "template" && (
             <div className="space-y-4">
-              <div role="radiogroup" aria-label="Templates" className="grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
+              <div role="radiogroup" aria-label="Шаблоны" className="grid max-h-72 gap-2 overflow-y-auto pr-1 sm:grid-cols-2">
                 {templates.map((t) => (
                   <button
                     key={t.id}
@@ -217,7 +217,7 @@ function CreateAutomationDialog({
                 ))}
               </div>
               {errors.templateId && <p className="text-xs text-destructive" role="alert">{errors.templateId[0]}</p>}
-              <Field id="template-name" label="Name (optional)" hint="Defaults to the template name." error={errors.name}>
+              <Field id="template-name" label="Название (необязательно)" hint="По умолчанию — название шаблона." error={errors.name}>
                 <Input {...fieldA11y("template-name", errors.name)} value={name} onChange={(e) => setName(e.target.value)} />
               </Field>
             </div>
@@ -227,37 +227,37 @@ function CreateAutomationDialog({
             <div className="space-y-4">
               <Field
                 id="ai-prompt"
-                label="Describe the automation"
-                hint="Mention the trigger word, what to ask, which links to send and what to save."
+                label="Опишите автоматизацию"
+                hint="Укажите слово-триггер, о чём спросить, какие ссылки отправить и что сохранить."
               >
                 <Textarea
                   id="ai-prompt"
                   rows={4}
                   value={prompt}
                   onChange={(e) => setPrompt(e.target.value)}
-                  placeholder="When someone sends the word COURSE, ask whether they want the beginner or advanced course. Then send the relevant link and save their interest as a contact field."
+                  placeholder="Когда человек пишет слово КУРС, спросить, какой курс ему нужен — для начинающих или продвинутый. Затем отправить нужную ссылку и сохранить выбор в поле контакта."
                 />
               </Field>
               <Button type="button" variant="outline" onClick={generate} disabled={generating || prompt.trim().length < 15}>
                 {generating ? <Loader2 className="animate-spin" aria-hidden /> : <PenLine aria-hidden />}
-                {generating ? "Drafting the flow…" : generated ? "Generate again" : "Generate draft"}
+                {generating ? "Собираем сценарий…" : generated ? "Сгенерировать заново" : "Сгенерировать черновик"}
               </Button>
 
               {generated && (
                 <div className="space-y-3">
                   <div className="flex flex-wrap items-center gap-2 text-xs">
                     <span className="rounded-full bg-muted px-2 py-0.5 font-medium">
-                      {generated.provider === "demo" ? "Demo generator (rule-based, no AI key set)" : `Generated by ${generated.provider.replace("gemini:", "Gemini · ")}`}
+                      {generated.provider === "demo" ? "Демо-генератор (по правилам, ключ ИИ не задан)" : `Сгенерировано: ${generated.provider.replace("gemini:", "Gemini · ")}`}
                     </span>
                     <span className="text-muted-foreground">
-                      {generated.graph.nodes.length} nodes · saved as a draft, never activated automatically
+                      блоков: {generated.graph.nodes.length} · сохраняется как черновик и не включается автоматически
                     </span>
                   </div>
                   <FlowPreview graph={generated.graph} issues={generated.issues} className="h-64" />
                   {generated.fixes.length > 0 && (
                     <details className="rounded-lg border p-2.5 text-xs text-muted-foreground">
                       <summary className="flex cursor-pointer items-center gap-1.5">
-                        <Wrench className="size-3.5" aria-hidden /> {generated.fixes.length} automatic fix{generated.fixes.length === 1 ? "" : "es"} applied
+                        <Wrench className="size-3.5" aria-hidden /> автоматических исправлений: {generated.fixes.length}
                       </summary>
                       <ul className="mt-1.5 list-disc space-y-0.5 pl-5">
                         {generated.fixes.map((f) => (
@@ -280,7 +280,7 @@ function CreateAutomationDialog({
                       ))}
                     </ul>
                   )}
-                  <Field id="ai-name" label="Name" error={errors.name}>
+                  <Field id="ai-name" label="Название" error={errors.name}>
                     <Input {...fieldA11y("ai-name", errors.name)} value={name} onChange={(e) => setName(e.target.value)} />
                   </Field>
                 </div>
@@ -290,10 +290,10 @@ function CreateAutomationDialog({
 
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              Отмена
             </Button>
             <Button type="submit" disabled={pending || (mode === "template" && !templateId) || (mode === "ai" && !generated?.valid)}>
-              {pending ? "Creating…" : "Create draft"}
+              {pending ? "Создаём…" : "Создать черновик"}
             </Button>
           </DialogFooter>
         </form>

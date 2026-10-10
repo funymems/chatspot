@@ -16,17 +16,17 @@ import { analyticsRanges, getAnalytics, type AnalyticsRange } from "@/lib/server
 import type { NodeType } from "@/lib/domain/graph/schema";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Analytics" };
+export const metadata: Metadata = { title: "Аналитика" };
 
 type Props = PageProps<"/w/[slug]/analytics">;
 
-const rangeLabels: Record<AnalyticsRange, string> = { "7d": "7 days", "30d": "30 days", "90d": "90 days", all: "All time" };
-const modeLabels = { all: "All runs", live: "Live only", test: "Test only" } as const;
+const rangeLabels: Record<AnalyticsRange, string> = { "7d": "7 дней", "30d": "30 дней", "90d": "90 дней", all: "Всё время" };
+const modeLabels = { all: "Все запуски", live: "Только реальные", test: "Только тестовые" } as const;
 
 export default function AnalyticsPage({ params, searchParams }: Props) {
   return (
     <PageContainer>
-      <PageHeader title="Analytics" description="Performance derived from persisted automation runs." />
+      <PageHeader title="Аналитика" description="Статистика по сохранённым запускам автоматизаций." />
       <Suspense
         fallback={
           <div className="space-y-4">
@@ -62,18 +62,18 @@ async function Analytics({ params, searchParams }: Pick<Props, "params" | "searc
   };
 
   const kpis = [
-    { label: "Total runs", value: a.totals.runs.toLocaleString("en"), hint: `${a.totals.live} live · ${a.totals.test} test` },
-    { label: "Successful", value: a.totals.completed.toLocaleString("en"), hint: `${a.totals.inProgress} still in progress` },
-    { label: "Failed", value: a.totals.failed.toLocaleString("en"), hint: "See node failures below" },
-    { label: "Completion rate", value: a.totals.completionRate === null ? "—" : `${a.totals.completionRate}%`, hint: "Completed ÷ finished runs" },
-    { label: "Leads captured", value: a.totals.leads.toLocaleString("en"), hint: "Contacts with email, phone or qualified status" },
+    { label: "Всего запусков", value: a.totals.runs.toLocaleString("ru"), hint: `реальных: ${a.totals.live} · тестовых: ${a.totals.test}` },
+    { label: "Успешных", value: a.totals.completed.toLocaleString("ru"), hint: `ещё выполняется: ${a.totals.inProgress}` },
+    { label: "С ошибкой", value: a.totals.failed.toLocaleString("ru"), hint: "Подробности — в разделе ошибок ниже" },
+    { label: "Доля успешных", value: a.totals.completionRate === null ? "—" : `${a.totals.completionRate}%`, hint: "Успешные ÷ завершённые запуски" },
+    { label: "Собрано лидов", value: a.totals.leads.toLocaleString("ru"), hint: "Контакты с почтой, телефоном или статусом «квалифицирован»" },
   ];
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center gap-2">
-        <Segmented options={Object.entries(rangeLabels).map(([k, l]) => ({ href: link({ range: k }), label: l, active: k === range }))} label="Date range" />
-        <Segmented options={Object.entries(modeLabels).map(([k, l]) => ({ href: link({ mode: k }), label: l, active: k === mode }))} label="Run type" />
+        <Segmented options={Object.entries(rangeLabels).map(([k, l]) => ({ href: link({ range: k }), label: l, active: k === range }))} label="Период" />
+        <Segmented options={Object.entries(modeLabels).map(([k, l]) => ({ href: link({ mode: k }), label: l, active: k === mode }))} label="Тип запусков" />
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-5">
@@ -88,18 +88,18 @@ async function Analytics({ params, searchParams }: Pick<Props, "params" | "searc
         ))}
       </div>
       <p className="-mt-3 text-xs text-muted-foreground">
-        {a.totals.conversions} test/live conversion{a.totals.conversions === 1 ? "" : "s"} — runs that reached a “Goal reached” end step. Purchases aren&apos;t tracked; no
-        external channel or store is connected.
+        Конверсий (тестовых и реальных): {a.totals.conversions} — это запуски, дошедшие до шага «Цель достигнута». Покупки не отслеживаются:
+        внешний магазин не подключён.
       </p>
 
       {a.totals.runs === 0 ? (
         <EmptyState
           icon={AnalyticsIcon}
-          title="No runs in this period"
-          description="Analytics fill in as automations run — from builder test runs or simulated conversations in the inbox."
+          title="За этот период запусков нет"
+          description="Аналитика появится, когда автоматизации начнут запускаться — по сообщениям из Instagram или тестовым диалогам."
           action={
             <Link href={`/w/${slug}/conversations`} className="text-sm font-medium text-primary hover:underline">
-              Simulate a conversation →
+              Запустить тестовый диалог →
             </Link>
           }
         />
@@ -107,7 +107,7 @@ async function Analytics({ params, searchParams }: Pick<Props, "params" | "searc
         <>
           <Card>
             <CardHeader>
-              <CardTitle>Runs per day</CardTitle>
+              <CardTitle>Запуски по дням</CardTitle>
               <CardDescription>{rangeLabels[range]} · {modeLabels[mode].toLowerCase()}</CardDescription>
             </CardHeader>
             <CardContent>
@@ -118,16 +118,16 @@ async function Analytics({ params, searchParams }: Pick<Props, "params" | "searc
           <div className="grid gap-6 lg:grid-cols-2">
             <Card>
               <CardHeader>
-                <CardTitle>Most triggered automations</CardTitle>
+                <CardTitle>Самые активные автоматизации</CardTitle>
               </CardHeader>
               <CardContent>
                 <table className="w-full text-sm">
                   <thead className="text-left text-xs text-muted-foreground">
                     <tr>
-                      <th className="pb-2 font-medium">Automation</th>
-                      <th className="pb-2 text-right font-medium">Runs</th>
-                      <th className="pb-2 text-right font-medium">Success</th>
-                      <th className="pb-2 text-right font-medium">Goals</th>
+                      <th className="pb-2 font-medium">Автоматизация</th>
+                      <th className="pb-2 text-right font-medium">Запуски</th>
+                      <th className="pb-2 text-right font-medium">Успех</th>
+                      <th className="pb-2 text-right font-medium">Цели</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -154,20 +154,20 @@ async function Analytics({ params, searchParams }: Pick<Props, "params" | "searc
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <AlertTriangle className="size-4 text-destructive" aria-hidden /> Node failures
+                  <AlertTriangle className="size-4 text-destructive" aria-hidden /> Ошибки в шагах
                 </CardTitle>
-                <CardDescription>Where runs break, grouped by step.</CardDescription>
+                <CardDescription>Где запуски обрываются, по шагам.</CardDescription>
               </CardHeader>
               <CardContent>
                 {a.failures.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">No failed steps in this period. 🎉</p>
+                  <p className="text-sm text-muted-foreground">За этот период ошибок нет. 🎉</p>
                 ) : (
                   <ul className="space-y-3">
                     {a.failures.map((f) => (
                       <li key={`${f.automationId}-${f.nodeId}`} className="text-sm">
                         <p className="flex items-center gap-2">
                           <span className="font-medium">{nodeMeta[f.nodeType as NodeType]?.label ?? f.nodeType}</span>
-                          <span className="text-muted-foreground">in</span>
+                          <span className="text-muted-foreground">в</span>
                           <Link href={`/w/${slug}/automations/${f.automationId}`} className="truncate hover:text-primary">
                             {f.automationName}
                           </Link>
@@ -184,8 +184,8 @@ async function Analytics({ params, searchParams }: Pick<Props, "params" | "searc
 
           <Card>
             <CardHeader>
-              <CardTitle>Execution history</CardTitle>
-              <CardDescription>Latest 25 runs in this period.</CardDescription>
+              <CardTitle>История запусков</CardTitle>
+              <CardDescription>Последние 25 запусков за период.</CardDescription>
             </CardHeader>
             <CardContent>
               <ul className="divide-y">
@@ -193,10 +193,10 @@ async function Analytics({ params, searchParams }: Pick<Props, "params" | "searc
                   <li key={r.id}>
                     <Link href={`/w/${slug}/automations/${r.automationId}/runs/${r.id}`} className="flex items-center gap-3 py-2 text-sm hover:bg-muted/40">
                       <RunStatusBadge status={r.status} />
-                      <span className="w-10 text-xs text-muted-foreground uppercase">{r.mode}</span>
+                      <span className="w-10 text-xs text-muted-foreground uppercase">{r.mode === "test" ? "тест" : "реал."}</span>
                       <span className="min-w-0 flex-1 truncate">{r.automationName}</span>
                       {r.error && <span className="hidden max-w-60 truncate text-xs text-destructive md:inline">{r.error}</span>}
-                      <span className="text-xs text-muted-foreground tabular-nums">{r.stepCount} steps</span>
+                      <span className="text-xs text-muted-foreground tabular-nums">шагов: {r.stepCount}</span>
                       <RelativeTime date={r.createdAt} className="w-24 text-right text-xs text-muted-foreground" />
                     </Link>
                   </li>

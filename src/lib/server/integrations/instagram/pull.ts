@@ -26,8 +26,8 @@ export async function pullInstagramMessages(ctx: WorkspaceContext) {
     .from(channelConnections)
     .where(and(eq(channelConnections.workspaceId, ctx.workspaceId), eq(channelConnections.provider, "instagram")))
     .limit(1);
-  if (!conn) throw notFound("Instagram connection");
-  if (conn.status !== "active" || !conn.token) throw conflict("Reconnect Instagram first");
+  if (!conn) throw notFound("подключение Instagram");
+  if (conn.status !== "active" || !conn.token) throw conflict("Сначала переподключите Instagram");
 
   const own = new Set([conn.accountId, conn.userId].filter(Boolean));
   const threads = await listRecentMessages(decryptSecret(conn.token));

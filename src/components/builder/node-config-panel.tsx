@@ -67,20 +67,20 @@ export function NodeConfigPanel(props: Props) {
           <p className="truncate text-xs text-muted-foreground">{meta.description}</p>
         </div>
         {node.type !== "trigger" && (
-          <Button variant="ghost" size="icon-sm" onClick={props.onDuplicate} aria-label="Duplicate node" title="Duplicate (Ctrl+D)">
+          <Button variant="ghost" size="icon-sm" onClick={props.onDuplicate} aria-label="Копировать блок" title="Копировать (Ctrl+D)">
             <Copy />
           </Button>
         )}
-        <Button variant="ghost" size="icon-sm" onClick={props.onDelete} aria-label="Delete node" title="Delete (Del)" className="hover:text-destructive">
+        <Button variant="ghost" size="icon-sm" onClick={props.onDelete} aria-label="Удалить блок" title="Удалить (Del)" className="hover:text-destructive">
           <Trash2 />
         </Button>
-        <Button variant="ghost" size="icon-sm" onClick={props.onClose} aria-label="Close panel">
+        <Button variant="ghost" size="icon-sm" onClick={props.onClose} aria-label="Закрыть панель">
           <X />
         </Button>
       </div>
 
       <div className="flex-1 space-y-4 overflow-y-auto p-4">
-        <TextField label="Display name (optional)" value={node.label ?? ""} onChange={props.onLabel} placeholder={meta.label} />
+        <TextField label="Отображаемое название (необязательно)" value={node.label ?? ""} onChange={props.onLabel} placeholder={meta.label} />
         {general.length > 0 && (
           <ul className="space-y-1 rounded-lg border border-destructive/30 bg-destructive/5 p-2.5 text-xs">
             {general.map((i, k) => (
@@ -129,40 +129,40 @@ function TriggerForm({ node, issues, onChange }: Props) {
   return (
     <div className="space-y-4">
       <SelectField
-        label="Starts when"
+        label="Запускается, когда"
         value={d.kind}
         onChange={(kind) => set({ kind }, "kind")}
         options={[
-          { value: "keyword", label: "Message contains a keyword" },
-          { value: "phrase", label: "Message matches a phrase" },
-          { value: "incoming_message", label: "Any incoming message" },
-          { value: "manual", label: "Manual test run" },
-          { value: "webhook", label: "Webhook / test event" },
+          { value: "keyword", label: "В сообщении есть ключевое слово" },
+          { value: "phrase", label: "Сообщение совпадает с фразой" },
+          { value: "incoming_message", label: "Приходит любое сообщение" },
+          { value: "manual", label: "Запуск вручную (тест)" },
+          { value: "webhook", label: "Вебхук / тестовое событие" },
         ]}
       />
       {d.kind === "keyword" && (
         <TagListField
-          label="Keywords"
+          label="Ключевые слова"
           values={d.keywords ?? []}
           onChange={(keywords) => set({ keywords }, "keywords")}
           error={err("keywords") ?? issues.find((i) => i.nodeId === node.id && i.code === "trigger_keywords")?.message}
-          hint="Matches whole words, e.g. COURSE matches “send me the course”."
+          hint="Совпадает по целому слову: например, КУРС сработает на «пришлите курс»."
         />
       )}
       {d.kind === "phrase" && (
         <>
           <SelectField
-            label="Match mode"
+            label="Тип совпадения"
             value={d.phraseMatch}
             onChange={(phraseMatch) => set({ phraseMatch }, "phraseMatch")}
             options={[
-              { value: "contains", label: "Message contains the phrase" },
-              { value: "exact", label: "Message is exactly the phrase" },
-              { value: "starts_with", label: "Message starts with the phrase" },
+              { value: "contains", label: "Сообщение содержит фразу" },
+              { value: "exact", label: "Сообщение в точности равно фразе" },
+              { value: "starts_with", label: "Сообщение начинается с фразы" },
             ]}
           />
           <TagListField
-            label="Phrases"
+            label="Фразы"
             values={d.phrases ?? []}
             onChange={(phrases) => set({ phrases }, "phrases")}
             error={err("phrases") ?? issues.find((i) => i.nodeId === node.id && i.code === "trigger_phrases")?.message}
@@ -170,24 +170,24 @@ function TriggerForm({ node, issues, onChange }: Props) {
         </>
       )}
       {(d.kind === "keyword" || d.kind === "phrase") && (
-        <SwitchField label="Case sensitive" checked={d.caseSensitive} onChange={(caseSensitive) => set({ caseSensitive }, "caseSensitive")} />
+        <SwitchField label="Учитывать регистр" checked={d.caseSensitive} onChange={(caseSensitive) => set({ caseSensitive }, "caseSensitive")} />
       )}
       {d.kind === "webhook" && (
         <TextField
-          label="Event name"
+          label="Название события"
           value={d.eventName}
           onChange={(eventName) => set({ eventName }, "eventName")}
           placeholder="inquiry_received"
           error={err("eventName") ?? issues.find((i) => i.nodeId === node.id && i.code === "trigger_event")?.message}
-          hint="Generic event for future integrations. Fired from the test runner for now."
+          hint="Универсальное событие для будущих интеграций. Пока его можно вызвать только из тестового запуска."
         />
       )}
       <TextAreaField
-        label="Sample input for testing"
+        label="Пример сообщения для проверки"
         value={d.sampleInput}
         onChange={(sampleInput) => set({ sampleInput }, "sampleInput")}
         rows={2}
-        placeholder="e.g. Hi, I want the COURSE"
+        placeholder="Например: Здравствуйте, хочу КУРС"
         hint={<TriggerMatchPreview config={d} />}
       />
     </div>
@@ -196,12 +196,12 @@ function TriggerForm({ node, issues, onChange }: Props) {
 
 /** Live check of whether the sample input would start this flow (mirrors the engine's matcher). */
 function TriggerMatchPreview({ config }: { config: TriggerConfig }) {
-  if (config.kind === "manual" || config.kind === "webhook") return <>Used as the incoming message in test runs.</>;
-  if (!config.sampleInput) return <>Type a sample message to check whether it would trigger this flow.</>;
+  if (config.kind === "manual" || config.kind === "webhook") return <>Используется как входящее сообщение при тестовых запусках.</>;
+  if (!config.sampleInput) return <>Введите пример сообщения, чтобы проверить, запустит ли оно сценарий.</>;
   const matches = matchesTrigger(config, config.sampleInput);
   return (
     <span className={matches ? "text-success" : "text-amber-700"}>
-      {matches ? "✓ This sample would start the flow" : "✗ This sample would not start the flow"}
+      {matches ? "✓ Это сообщение запустит сценарий" : "✗ Это сообщение не запустит сценарий"}
     </span>
   );
 }
@@ -211,7 +211,7 @@ function TriggerMatchPreview({ config }: { config: TriggerConfig }) {
 function VariableChips({ variables, onInsert }: { variables: string[]; onInsert: (token: string) => void }) {
   return (
     <span className="flex flex-wrap items-center gap-1">
-      <span>Insert:</span>
+      <span>Вставить:</span>
       {variables.map((v) => (
         <button
           key={v}
@@ -233,10 +233,10 @@ function MessageForm({ node, issues, onChange, variables }: Props) {
   return (
     <div className="space-y-5">
       <ListEditor
-        label="Messages (sent in order)"
+        label="Сообщения (отправляются по порядку)"
         items={d.messages ?? []}
         max={10}
-        addLabel="Add message"
+        addLabel="Добавить сообщение"
         error={err("messages") && !d.messages?.length ? err("messages") : undefined}
         create={() => ({ id: newId("m"), text: "" })}
         onChange={(messages) => set({ messages }, "messages")}
@@ -246,13 +246,13 @@ function MessageForm({ node, issues, onChange, variables }: Props) {
               value={m.text}
               rows={3}
               onChange={(e) => update({ ...m, text: e.target.value })}
-              aria-label={`Message ${i + 1}`}
+              aria-label={`Сообщение ${i + 1}`}
               aria-invalid={err(`messages.${i}.text`) || issues.some((x) => x.nodeId === node.id && x.path === `messages.${i}.text`) ? true : undefined}
-              placeholder="Hi {{contact.first_name}}!"
+              placeholder="Привет, {{contact.first_name}}!"
               className="w-full rounded-lg border border-input bg-transparent px-2.5 py-2 text-sm outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive"
             />
             {issues.find((x) => x.nodeId === node.id && x.path === `messages.${i}.text`) && (
-              <p className="text-xs text-destructive">This message is empty</p>
+              <p className="text-xs text-destructive">Сообщение пустое</p>
             )}
             <div className="text-xs text-muted-foreground">
               <VariableChips variables={variables} onInsert={(token) => update({ ...m, text: `${m.text}${m.text && !m.text.endsWith(" ") ? " " : ""}${token}` })} />
@@ -262,58 +262,58 @@ function MessageForm({ node, issues, onChange, variables }: Props) {
       />
 
       <ListEditor
-        label="Quick-reply buttons"
+        label="Кнопки быстрого ответа"
         items={d.quickReplies ?? []}
         max={10}
-        addLabel="Add quick reply"
+        addLabel="Добавить быстрый ответ"
         create={() => ({ id: newId("q"), label: "" })}
         onChange={(quickReplies) => set({ quickReplies }, "quickReplies")}
         render={(q, update, i) => (
-          <Input value={q.label} maxLength={40} onChange={(e) => update({ ...q, label: e.target.value })} placeholder="Button label" aria-label={`Quick reply ${i + 1}`} aria-invalid={err(`quickReplies.${i}`) ? true : undefined} />
+          <Input value={q.label} maxLength={40} onChange={(e) => update({ ...q, label: e.target.value })} placeholder="Текст кнопки" aria-label={`Быстрый ответ ${i + 1}`} aria-invalid={err(`quickReplies.${i}`) ? true : undefined} />
         )}
       />
 
       <ListEditor
-        label="Link buttons"
+        label="Кнопки-ссылки"
         items={d.linkButtons ?? []}
         max={3}
-        addLabel="Add link button"
+        addLabel="Добавить кнопку-ссылку"
         create={() => ({ id: newId("b"), label: "", url: "https://" })}
         onChange={(linkButtons) => set({ linkButtons }, "linkButtons")}
         render={(b, update, i) => (
           <div className="grid gap-1.5">
-            <Input value={b.label} maxLength={40} onChange={(e) => update({ ...b, label: e.target.value })} placeholder="Label" aria-label={`Link ${i + 1} label`} />
-            <Input value={b.url} onChange={(e) => update({ ...b, url: e.target.value })} placeholder="https://…" aria-label={`Link ${i + 1} URL`} aria-invalid={err(`linkButtons.${i}.url`) ? true : undefined} />
+            <Input value={b.label} maxLength={40} onChange={(e) => update({ ...b, label: e.target.value })} placeholder="Текст" aria-label={`Текст ссылки ${i + 1}`} />
+            <Input value={b.url} onChange={(e) => update({ ...b, url: e.target.value })} placeholder="https://…" aria-label={`Адрес ссылки ${i + 1}`} aria-invalid={err(`linkButtons.${i}.url`) ? true : undefined} />
             {err(`linkButtons.${i}`) && <p className="text-xs text-destructive">{err(`linkButtons.${i}`)}</p>}
           </div>
         )}
       />
 
       <DurationField
-        label="Delay before sending"
+        label="Задержка перед отправкой"
         seconds={d.delaySeconds ?? 0}
         onChange={(delaySeconds) => set({ delaySeconds }, "delaySeconds")}
-        hint="Delays are scheduled as background jobs, never by holding a request open."
+        hint="Задержка выполняется фоновой задачей."
       />
 
       <SwitchField
-        label="Wait for reply"
-        description="Pause the run until the contact answers."
+        label="Ждать ответа"
+        description="Приостановить сценарий, пока контакт не ответит."
         checked={d.waitForReply ?? false}
         onChange={(waitForReply) => set({ waitForReply }, "waitForReply")}
       />
       {d.waitForReply && (
         <>
           <TextField
-            label="Save reply as variable"
+            label="Сохранить ответ в переменную"
             value={d.saveReplyAs ?? ""}
             onChange={(saveReplyAs) => set({ saveReplyAs }, "saveReplyAs")}
             placeholder="course_choice"
             error={err("saveReplyAs")}
-            hint={d.saveReplyAs ? <>Use it later as <code>{`{{${d.saveReplyAs}}}`}</code></> : "Optional. Letters, numbers and underscores."}
+            hint={d.saveReplyAs ? <>Используйте её дальше как <code>{`{{${d.saveReplyAs}}}`}</code></> : "Необязательно. Латинские буквы, цифры и подчёркивания."}
           />
           <DurationField
-            label="Stop waiting after (0 = no timeout)"
+            label="Перестать ждать через (0 — ждать бесконечно)"
             seconds={d.replyTimeoutSeconds ?? 0}
             onChange={(replyTimeoutSeconds) => set({ replyTimeoutSeconds }, "replyTimeoutSeconds")}
           />
@@ -325,7 +325,14 @@ function MessageForm({ node, issues, onChange, variables }: Props) {
 
 // ─── Condition ──────────────────────────────────────────────────────────────
 
-const operatorOptions = compareOperators.map((o) => ({ value: o, label: o.replace(/_/g, " ") }));
+const operatorLabels: Record<(typeof compareOperators)[number], string> = {
+  equals: "равно",
+  not_equals: "не равно",
+  contains: "содержит",
+  is_empty: "пусто",
+  is_not_empty: "не пусто",
+};
+const operatorOptions = compareOperators.map((o) => ({ value: o, label: operatorLabels[o] }));
 
 function ConditionForm({ node, issues, onChange }: Props) {
   const d = node.data as ConditionConfig;
@@ -334,27 +341,27 @@ function ConditionForm({ node, issues, onChange }: Props) {
   return (
     <div className="space-y-4">
       <SelectField
-        label="Match"
+        label="Совпадение"
         value={d.combinator ?? "all"}
         onChange={(combinator) => set({ combinator }, "combinator")}
         options={[
-          { value: "all", label: "All rules (AND)" },
-          { value: "any", label: "Any rule (OR)" },
+          { value: "all", label: "Все правила (И)" },
+          { value: "any", label: "Любое правило (ИЛИ)" },
         ]}
       />
       <ListEditor<ConditionRule>
-        label="Rules"
+        label="Правила"
         items={d.rules ?? []}
         max={10}
-        addLabel="Add rule"
+        addLabel="Добавить правило"
         error={!d.rules?.length ? err("rules") : undefined}
         create={() => defaultRule("message_contains")}
         onChange={(rules) => set({ rules }, "rules")}
         render={(rule, update, i) => <RuleEditor rule={rule} onChange={update} error={(p) => err(`rules.${i}.${p}`)} />}
       />
       <p className="rounded-lg bg-muted/60 p-2.5 text-xs text-muted-foreground">
-        Connect the <span className="font-medium text-success">Yes</span> output for when the rules match and the{" "}
-        <span className="font-medium text-destructive">No</span> output for everything else.
+        Подключите выход <span className="font-medium text-success">Да</span> для случая, когда правила выполняются, и выход{" "}
+        <span className="font-medium text-destructive">Нет</span> для всех остальных случаев.
       </p>
     </div>
   );
@@ -364,30 +371,30 @@ function RuleEditor({ rule, onChange, error }: { rule: ConditionRule; onChange: 
   return (
     <div className="space-y-2 rounded-lg border p-2.5">
       <SelectField
-        label="Rule"
+        label="Правило"
         value={rule.kind}
         onChange={(kind) => onChange(defaultRule(kind))}
         options={[
-          { value: "message_contains", label: "Message contains keyword" },
-          { value: "variable", label: "Variable compares to value" },
-          { value: "has_tag", label: "Contact has tag" },
-          { value: "contact_field", label: "Contact field compares to value" },
+          { value: "message_contains", label: "В сообщении есть ключевое слово" },
+          { value: "variable", label: "Переменная сравнивается со значением" },
+          { value: "has_tag", label: "У контакта есть тег" },
+          { value: "contact_field", label: "Поле контакта сравнивается со значением" },
         ]}
       />
       {rule.kind === "message_contains" && (
-        <TagListField label="Keywords" values={rule.keywords} onChange={(keywords) => onChange({ ...rule, keywords })} error={error("keywords")} />
+        <TagListField label="Ключевые слова" values={rule.keywords} onChange={(keywords) => onChange({ ...rule, keywords })} error={error("keywords")} />
       )}
-      {rule.kind === "has_tag" && <TextField label="Tag" value={rule.tag} onChange={(tag) => onChange({ ...rule, tag })} error={error("tag")} placeholder="vip" />}
+      {rule.kind === "has_tag" && <TextField label="Тег" value={rule.tag} onChange={(tag) => onChange({ ...rule, tag })} error={error("tag")} placeholder="vip" />}
       {(rule.kind === "variable" || rule.kind === "contact_field") && (
         <>
           {rule.kind === "variable" ? (
-            <TextField label="Variable" value={rule.variable} onChange={(variable) => onChange({ ...rule, variable })} error={error("variable")} placeholder="course_choice" />
+            <TextField label="Переменная" value={rule.variable} onChange={(variable) => onChange({ ...rule, variable })} error={error("variable")} placeholder="course_choice" />
           ) : (
-            <TextField label="Contact field" value={rule.field} onChange={(field) => onChange({ ...rule, field })} error={error("field")} placeholder="email, first_name or a custom field" />
+            <TextField label="Поле контакта" value={rule.field} onChange={(field) => onChange({ ...rule, field })} error={error("field")} placeholder="email, first_name или своё поле" />
           )}
-          <SelectField label="Operator" value={rule.operator} onChange={(operator) => onChange({ ...rule, operator })} options={operatorOptions} />
+          <SelectField label="Оператор" value={rule.operator} onChange={(operator) => onChange({ ...rule, operator })} options={operatorOptions} />
           {rule.operator !== "is_empty" && rule.operator !== "is_not_empty" && (
-            <TextField label="Value" value={rule.value} onChange={(value) => onChange({ ...rule, value })} error={error("value")} />
+            <TextField label="Значение" value={rule.value} onChange={(value) => onChange({ ...rule, value })} error={error("value")} />
           )}
         </>
       )}
@@ -405,82 +412,82 @@ function ActionForm({ node, issues, onChange, automations }: Props) {
   return (
     <div className="space-y-4">
       <SelectField
-        label="Action"
+        label="Действие"
         value={a.kind}
         onChange={(kind) => set(defaultAction(kind), "kind")}
         options={[
-          { value: "add_tag", label: "Add a contact tag" },
-          { value: "remove_tag", label: "Remove a contact tag" },
-          { value: "set_field", label: "Set a contact field" },
-          { value: "capture", label: "Capture email or phone" },
-          { value: "wait", label: "Wait" },
-          { value: "redirect", label: "Redirect to another flow" },
-          { value: "log_event", label: "Log an event" },
-          { value: "mark_qualified", label: "Mark lead as qualified" },
+          { value: "add_tag", label: "Добавить тег контакту" },
+          { value: "remove_tag", label: "Убрать тег у контакта" },
+          { value: "set_field", label: "Заполнить поле контакта" },
+          { value: "capture", label: "Сохранить эл. почту или телефон" },
+          { value: "wait", label: "Подождать" },
+          { value: "redirect", label: "Перейти в другой сценарий" },
+          { value: "log_event", label: "Записать событие" },
+          { value: "mark_qualified", label: "Отметить лид как квалифицированный" },
         ]}
       />
       {(a.kind === "add_tag" || a.kind === "remove_tag") && (
-        <TextField label="Tag" value={a.tag} onChange={(tag) => set({ ...a, tag }, "tag")} error={err("action.tag")} placeholder="interested" />
+        <TextField label="Тег" value={a.tag} onChange={(tag) => set({ ...a, tag }, "tag")} error={err("action.tag")} placeholder="interested" />
       )}
       {a.kind === "set_field" && (
         <>
           <TextField
-            label="Field"
+            label="Поле"
             value={a.field}
             onChange={(field) => set({ ...a, field }, "field")}
             error={err("action.field")}
             placeholder="course_interest"
-            hint="Built-in: first_name, last_name, email, phone, notes. Anything else becomes a custom field."
+            hint="Встроенные: first_name, last_name, email, phone, notes. Любое другое название станет дополнительным полем."
           />
-          <TextField label="Value" value={a.value} onChange={(value) => set({ ...a, value }, "value")} error={err("action.value")} hint="Variables like {{course_choice}} are supported." />
+          <TextField label="Значение" value={a.value} onChange={(value) => set({ ...a, value }, "value")} error={err("action.value")} hint="Можно использовать переменные, например {{course_choice}}." />
         </>
       )}
       {a.kind === "capture" && (
         <>
           <SelectField
-            label="Capture"
+            label="Что сохранить"
             value={a.target}
             onChange={(target) => set({ ...a, target }, "target")}
             options={[
-              { value: "email", label: "Email address" },
-              { value: "phone", label: "Phone number" },
+              { value: "email", label: "Адрес эл. почты" },
+              { value: "phone", label: "Номер телефона" },
             ]}
           />
           <SelectField
-            label="Read from"
+            label="Откуда взять"
             value={a.source}
             onChange={(source) => set({ ...a, source }, "source")}
             options={[
-              { value: "last_message", label: "The latest incoming message" },
-              { value: "variable", label: "A saved variable" },
+              { value: "last_message", label: "Из последнего входящего сообщения" },
+              { value: "variable", label: "Из сохранённой переменной" },
             ]}
           />
           {a.source === "variable" && (
-            <TextField label="Variable" value={a.variable} onChange={(variable) => set({ ...a, variable }, "variable")} error={issue("capture_variable")} placeholder="email_reply" />
+            <TextField label="Переменная" value={a.variable} onChange={(variable) => set({ ...a, variable }, "variable")} error={issue("capture_variable")} placeholder="email_reply" />
           )}
-          <p className="text-xs text-muted-foreground">If a valid value is found it is saved on the contact; check it later with a Condition.</p>
+          <p className="text-xs text-muted-foreground">Если найдено корректное значение, оно сохраняется в контакте; проверить его можно блоком «Условие».</p>
         </>
       )}
       {a.kind === "wait" && (
-        <DurationField label="Wait for" seconds={a.seconds} min={1} onChange={(seconds) => set({ ...a, seconds }, "seconds")} error={err("action.seconds")} hint="Runs resume from a background job." />
+        <DurationField label="Сколько ждать" seconds={a.seconds} min={1} onChange={(seconds) => set({ ...a, seconds }, "seconds")} error={err("action.seconds")} hint="Сценарий продолжится фоновой задачей." />
       )}
       {a.kind === "redirect" && (
         <SelectField
-          label="Continue in automation"
+          label="Продолжить в автоматизации"
           value={a.automationId}
           onChange={(automationId) => set({ ...a, automationId }, "automationId")}
           options={automations.map((x) => ({ value: x.id, label: x.name }))}
-          placeholder={automations.length ? "Choose an automation" : "No other automations yet"}
+          placeholder={automations.length ? "Выберите автоматизацию" : "Других автоматизаций пока нет"}
           error={err("action.automationId") ?? issue("redirect_missing") ?? issue("redirect_self")}
         />
       )}
       {a.kind === "log_event" && (
         <>
-          <TextField label="Event name" value={a.eventName} onChange={(eventName) => set({ ...a, eventName }, "eventName")} error={err("action.eventName")} placeholder="booking_requested" />
-          <TextAreaField label="Note" value={a.note} onChange={(note) => set({ ...a, note }, "note")} rows={2} />
+          <TextField label="Название события" value={a.eventName} onChange={(eventName) => set({ ...a, eventName }, "eventName")} error={err("action.eventName")} placeholder="booking_requested" />
+          <TextAreaField label="Заметка" value={a.note} onChange={(note) => set({ ...a, note }, "note")} rows={2} />
         </>
       )}
-      {a.kind === "mark_qualified" && <p className="text-sm text-muted-foreground">Sets the contact&apos;s lead status to Qualified.</p>}
+      {a.kind === "mark_qualified" && <p className="text-sm text-muted-foreground">Устанавливает контакту статус лида «Квалифицирован».</p>}
     </div>
   );
 }
@@ -494,30 +501,30 @@ function AiForm({ node, issues, onChange, agents }: Props) {
   return (
     <div className="space-y-4">
       <SelectField
-        label="AI agent"
+        label="ИИ-агент"
         value={d.agentId}
         onChange={(agentId) => set({ agentId }, "agentId")}
         options={agents.map((a) => ({ value: a.id, label: a.name }))}
-        placeholder={agents.length ? "Choose an agent" : "No agents yet"}
+        placeholder={agents.length ? "Выберите агента" : "Агентов пока нет"}
         error={err("agentId") ?? issues.find((i) => i.nodeId === node.id && i.code === "agent_missing")?.message}
-        hint={agents.length ? undefined : "Create an agent on the AI Agents page first."}
+        hint={agents.length ? undefined : "Сначала создайте агента в разделе «ИИ-агенты»."}
       />
-      <TextAreaField label="Node-specific instructions" value={d.instructions} onChange={(instructions) => set({ instructions }, "instructions")} rows={3} placeholder="Keep it short and suggest the beginner course." />
-      <TextAreaField label="Knowledge context" value={d.knowledgeContext} onChange={(knowledgeContext) => set({ knowledgeContext }, "knowledgeContext")} rows={2} hint="Extra context added to what the agent retrieves from its knowledge base." />
+      <TextAreaField label="Инструкции для этого блока" value={d.instructions} onChange={(instructions) => set({ instructions }, "instructions")} rows={3} placeholder="Отвечай коротко и предлагай курс для начинающих." />
+      <TextAreaField label="Дополнительный контекст" value={d.knowledgeContext} onChange={(knowledgeContext) => set({ knowledgeContext }, "knowledgeContext")} rows={2} hint="Добавляется к тому, что агент находит в своей базе знаний." />
       <SelectField
-        label="If the agent can't answer"
+        label="Если агент не знает ответа"
         value={d.fallback}
         onChange={(fallback) => set({ fallback }, "fallback")}
         options={[
-          { value: "agent_default", label: "Use the agent's fallback response" },
-          { value: "custom_message", label: "Send a custom message" },
-          { value: "handoff", label: "Hand off to a human" },
+          { value: "agent_default", label: "Отправить запасной ответ агента" },
+          { value: "custom_message", label: "Отправить своё сообщение" },
+          { value: "handoff", label: "Передать человеку" },
         ]}
       />
       {d.fallback === "custom_message" && (
-        <TextAreaField label="Fallback message" value={d.fallbackMessage} onChange={(fallbackMessage) => set({ fallbackMessage }, "fallbackMessage")} rows={2} error={err("fallbackMessage")} />
+        <TextAreaField label="Запасное сообщение" value={d.fallbackMessage} onChange={(fallbackMessage) => set({ fallbackMessage }, "fallbackMessage")} rows={2} error={err("fallbackMessage")} />
       )}
-      <TextField label="Save reply as variable (optional)" value={d.saveReplyAs} onChange={(saveReplyAs) => set({ saveReplyAs }, "saveReplyAs")} error={err("saveReplyAs")} placeholder="ai_answer" />
+      <TextField label="Сохранить ответ в переменную (необязательно)" value={d.saveReplyAs} onChange={(saveReplyAs) => set({ saveReplyAs }, "saveReplyAs")} error={err("saveReplyAs")} placeholder="ai_answer" />
     </div>
   );
 }
@@ -528,15 +535,15 @@ function NoteForm({ node, onChange }: Props) {
   const d = node.data as NoteConfig;
   return (
     <div className="space-y-4">
-      <TextAreaField label="Note" value={d.text} onChange={(text) => onChange({ ...d, text }, "text")} rows={6} hint="Notes are annotations for your team and never run." />
-      <FieldRow label="Color">
+      <TextAreaField label="Заметка" value={d.text} onChange={(text) => onChange({ ...d, text }, "text")} rows={6} hint="Заметки — это комментарии для команды, они не выполняются." />
+      <FieldRow label="Цвет">
         <div className="flex gap-2">
           {(["yellow", "blue", "green", "pink", "gray"] as const).map((c) => (
             <button
               key={c}
               type="button"
               onClick={() => onChange({ ...d, color: c }, "color")}
-              aria-label={c}
+              aria-label={{ yellow: "Жёлтый", blue: "Голубой", green: "Зелёный", pink: "Розовый", gray: "Серый" }[c]}
               aria-pressed={d.color === c}
               className={cn(
                 "size-6 rounded-full border-2",
@@ -556,16 +563,16 @@ function EndForm({ node, onChange }: Props) {
   return (
     <div className="space-y-4">
       <SelectField
-        label="Result"
+        label="Результат"
         value={d.outcome}
         onChange={(outcome) => onChange({ ...d, outcome }, "outcome")}
         options={[
-          { value: "completed", label: "Completed" },
-          { value: "goal_reached", label: "Goal reached (counts as a conversion)" },
-          { value: "handoff", label: "Hand off to a human" },
+          { value: "completed", label: "Завершено" },
+          { value: "goal_reached", label: "Цель достигнута (считается конверсией)" },
+          { value: "handoff", label: "Передать человеку" },
         ]}
       />
-      <TextField label="Result label" value={d.label} onChange={(label) => onChange({ ...d, label }, "label")} placeholder="Lead captured" />
+      <TextField label="Подпись результата" value={d.label} onChange={(label) => onChange({ ...d, label }, "label")} placeholder="Лид получен" />
     </div>
   );
 }

@@ -148,8 +148,8 @@ function isAncestor(candidate: string, of: string, edges: GraphEdge[]): boolean 
 /** Starter graph for "create from scratch": Trigger → Message → End. */
 export function defaultGraph(): AutomationGraph {
   const g = new GraphBuilder();
-  const t = g.trigger({ kind: "keyword", keywords: ["hello"], sampleInput: "hello" }, { label: "When someone says hello" });
-  const m = g.message("Hi {{contact.first_name}}! 👋 Thanks for reaching out. How can we help?");
+  const t = g.trigger({ kind: "keyword", keywords: ["привет"], sampleInput: "привет" }, { label: "Когда пишут «привет»" });
+  const m = g.message("Привет, {{contact.first_name}}! 👋 Спасибо, что написали. Чем можем помочь?");
   const e = g.end("completed");
   g.chain(t, m, e);
   return g.build();

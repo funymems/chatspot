@@ -25,7 +25,7 @@ export async function disconnectInstagramAction(slug: string): Promise<ActionRes
     const ctx = await authorizeWorkspace(slug);
     await disconnectInstagram(ctx);
     refresh();
-    return { ok: true, data: null, message: "Instagram disconnected. Remove the app in Instagram settings to revoke access completely." };
+    return { ok: true, data: null, message: "Instagram отключён. Чтобы полностью отозвать доступ, удалите приложение в настройках Instagram." };
   });
 }
 
@@ -37,7 +37,7 @@ export async function setInstagramAutoReplyAction(slug: string, enabled: boolean
     return {
       ok: true,
       data: null,
-      message: enabled ? "Auto-replies on: active automations now answer Instagram DMs" : "Auto-replies off: Instagram messages only arrive in the inbox",
+      message: enabled ? "Автоответы включены: активные автоматизации теперь отвечают на сообщения в Instagram" : "Автоответы выключены: сообщения из Instagram только попадают во входящие",
     };
   });
 }
@@ -52,8 +52,8 @@ export async function pullInstagramMessagesAction(slug: string): Promise<ActionR
       if (r.dispatched) after(() => processDueJobs());
       refresh();
       const message = !r.candidates
-        ? `No new incoming DMs from the last 24 hours (${r.threads} thread${r.threads === 1 ? "" : "s"} checked)`
-        : `${r.stored} new message${r.stored === 1 ? "" : "s"} saved, ${r.dispatched} automation run${r.dispatched === 1 ? "" : "s"} started`;
+        ? `За последние 24 часа новых входящих сообщений нет (проверено переписок: ${r.threads})`
+        : `Новых сообщений сохранено: ${r.stored}, запущено автоматизаций: ${r.dispatched}`;
       return { ok: true, data: { candidates: r.candidates, stored: r.stored, dispatched: r.dispatched }, message };
     } catch (err) {
       // Meta's error text never contains tokens (see api.ts) and is the useful part here.

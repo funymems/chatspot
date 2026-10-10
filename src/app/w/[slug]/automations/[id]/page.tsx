@@ -19,7 +19,9 @@ import { nodeDisplayName } from "@/lib/domain/graph/validate";
 import { idSchema } from "@/lib/validation/automation";
 import { AutomationDetailsForm, AutomationHeaderActions } from "./automation-detail-client";
 
-export const metadata: Metadata = { title: "Automation" };
+const originLabels: Record<string, string> = { scratch: "с нуля", template: "из шаблона", ai: "по описанию (ИИ)", duplicate: "копированием" };
+
+export const metadata: Metadata = { title: "Автоматизация" };
 
 type Props = PageProps<"/w/[slug]/automations/[id]">;
 
@@ -56,7 +58,7 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
   return (
     <PageContainer>
       <PageHeader
-        breadcrumbs={[{ label: "Automations", href: `/w/${slug}/automations` }, { label: a.name }]}
+        breadcrumbs={[{ label: "Автоматизации", href: `/w/${slug}/automations` }, { label: a.name }]}
         title={
           <span className="flex items-center gap-3">
             <span className="truncate">{a.name}</span>
@@ -77,11 +79,11 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
         <div className="min-w-0 space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Flow</CardTitle>
+              <CardTitle>Сценарий</CardTitle>
               <CardAction>
                 <Button asChild size="sm">
                   <Link href={`/w/${slug}/automations/${a.id}/builder`}>
-                    <PencilRuler aria-hidden /> Open builder
+                    <PencilRuler aria-hidden /> Открыть конструктор
                   </Link>
                 </Button>
               </CardAction>
@@ -102,12 +104,12 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
                 ) : (
                   <CircleAlert className="size-4 text-destructive" aria-hidden />
                 )}
-                Validation
+                Проверка
               </CardTitle>
               <CardDescription>
                 {errors.length === 0
-                  ? "This flow is valid and can be activated."
-                  : `${errors.length} problem${errors.length === 1 ? "" : "s"} must be fixed before this flow can be activated.`}
+                  ? "Сценарий без ошибок, его можно включить."
+                  : `Перед включением нужно исправить ошибки в сценарии (${errors.length}).`}
               </CardDescription>
             </CardHeader>
             {validation.issues.length > 0 && (
@@ -116,9 +118,9 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
                   {[...errors, ...warnings].map((issue, i) => (
                     <li key={i} className="flex items-start gap-2.5 px-3 py-2.5 text-sm">
                       {issue.severity === "error" ? (
-                        <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-label="Error" />
+                        <CircleAlert className="mt-0.5 size-4 shrink-0 text-destructive" aria-label="Ошибка" />
                       ) : (
-                        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" aria-label="Warning" />
+                        <AlertTriangle className="mt-0.5 size-4 shrink-0 text-amber-600" aria-label="Предупреждение" />
                       )}
                       <span className="min-w-0">
                         <span>{issue.message}</span>
@@ -136,12 +138,12 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
           </Card>
           <Card>
             <CardHeader>
-              <CardTitle>Recent runs</CardTitle>
-              <CardDescription>Test runs from the builder and live runs from incoming messages.</CardDescription>
+              <CardTitle>Последние запуски</CardTitle>
+              <CardDescription>Тестовые запуски из конструктора и реальные — по входящим сообщениям.</CardDescription>
             </CardHeader>
             <CardContent>
               {runs.length === 0 ? (
-                <p className="text-sm text-muted-foreground">No runs yet.</p>
+                <p className="text-sm text-muted-foreground">Запусков пока нет.</p>
               ) : (
                 <ul className="divide-y rounded-lg border">
                   {runs.map((r) => (
@@ -151,12 +153,12 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
                         className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/50"
                       >
                         <RunStatusBadge status={r.status} />
-                        <span className="text-xs text-muted-foreground uppercase">{r.mode}</span>
+                        <span className="text-xs text-muted-foreground uppercase">{r.mode === "test" ? "тест" : "реальный"}</span>
                         <span className="min-w-0 flex-1 truncate">
-                          {[r.contactFirst, r.contactLast].filter(Boolean).join(" ") || "No contact"}
+                          {[r.contactFirst, r.contactLast].filter(Boolean).join(" ") || "Без контакта"}
                           {r.error && <span className="ml-2 text-xs text-destructive">{r.error}</span>}
                         </span>
-                        <span className="text-xs text-muted-foreground">v{r.version} · {r.stepCount} steps</span>
+                        <span className="text-xs text-muted-foreground">v{r.version} · шагов: {r.stepCount}</span>
                         <RelativeTime date={r.createdAt} className="w-24 text-right text-xs text-muted-foreground" />
                       </Link>
                     </li>
@@ -170,7 +172,7 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
         <div className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Details</CardTitle>
+              <CardTitle>Описание</CardTitle>
             </CardHeader>
             <CardContent>
               <AutomationDetailsForm slug={slug} id={a.id} name={a.name} description={a.description} />
@@ -180,30 +182,30 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <GitCommitVertical className="size-4 text-muted-foreground" aria-hidden /> Publishing
+                <GitCommitVertical className="size-4 text-muted-foreground" aria-hidden /> Публикация
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3 text-sm">
               {a.published ? (
                 <p>
-                  Version <span className="font-medium">v{a.published.version}</span> published{" "}
+                  Версия <span className="font-medium">v{a.published.version}</span> опубликована{" "}
                   <RelativeTime date={a.published.createdAt} className="text-muted-foreground" />.
                 </p>
               ) : (
-                <p className="text-muted-foreground">Never published. Activate the automation to publish a version.</p>
+                <p className="text-muted-foreground">Ещё не публиковалась. Включите автоматизацию, чтобы опубликовать версию.</p>
               )}
               {a.hasUnpublishedChanges && (
                 <p className="flex items-start gap-2 rounded-lg bg-warning/15 p-2.5 text-xs text-amber-800">
                   <AlertTriangle className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                  The draft has changes that aren&apos;t live yet. Activate again to publish them.
+                  В черновике есть изменения, которые ещё не работают. Включите автоматизацию снова, чтобы их опубликовать.
                 </p>
               )}
               <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-xs">
-                <dt className="text-muted-foreground">Trigger</dt>
+                <dt className="text-muted-foreground">Триггер</dt>
                 <dd>{a.triggerType ? triggerLabels[a.triggerType] ?? a.triggerType : "—"}</dd>
-                <dt className="text-muted-foreground">Created from</dt>
-                <dd className="capitalize">{a.origin}</dd>
-                <dt className="text-muted-foreground">Last modified</dt>
+                <dt className="text-muted-foreground">Создана</dt>
+                <dd>{originLabels[a.origin] ?? a.origin}</dd>
+                <dt className="text-muted-foreground">Изменена</dt>
                 <dd>
                   <RelativeTime date={a.updatedAt} />
                 </dd>

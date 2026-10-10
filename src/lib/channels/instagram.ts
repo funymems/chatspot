@@ -45,9 +45,9 @@ export class InstagramChannelProvider implements ChannelProvider {
       .from(conversations)
       .where(and(eq(conversations.id, ctx.conversationId), eq(conversations.workspaceId, ctx.workspaceId), eq(conversations.channel, "instagram")))
       .limit(1);
-    if (!conv?.contactId) throw new AppError("Instagram conversation not found", "not_found");
+    if (!conv?.contactId) throw new AppError("Диалог в Instagram не найден", "not_found");
     const [contact] = await db.select({ igsid: contacts.channelUserId }).from(contacts).where(eq(contacts.id, conv.contactId)).limit(1);
-    if (!contact?.igsid) throw new AppError("This contact has no Instagram ID to reply to", "validation");
+    if (!contact?.igsid) throw new AppError("У этого контакта нет Instagram ID, ответить невозможно", "validation");
 
     const [conn] = await db
       .select({ id: channelConnections.id, token: channelConnections.accessTokenEncrypted, status: channelConnections.status })
@@ -55,7 +55,7 @@ export class InstagramChannelProvider implements ChannelProvider {
       .where(and(eq(channelConnections.workspaceId, ctx.workspaceId), eq(channelConnections.provider, "instagram"), ne(channelConnections.status, "disconnected")))
       .limit(1);
     if (!conn?.token || conn.status !== "active") {
-      throw new AppError("Instagram isn't connected (or the token expired). Reconnect it in Settings.", "validation");
+      throw new AppError("Instagram не подключён или срок действия токена истёк. Переподключите его в настройках.", "validation");
     }
 
     // Meta only allows replies within 24 hours of the person's last message.
@@ -66,7 +66,7 @@ export class InstagramChannelProvider implements ChannelProvider {
       .orderBy(desc(messages.createdAt))
       .limit(1);
     if (!lastInbound || Date.now() - lastInbound.at.getTime() > WINDOW_MS) {
-      throw new AppError("The 24-hour Instagram reply window has closed — wait for the customer to write again.", "validation");
+      throw new AppError("24-часовое окно для ответа в Instagram закрыто — дождитесь, пока клиент напишет снова.", "validation");
     }
 
     const links = (message.linkButtons ?? []).slice(0, 3);
@@ -81,11 +81,11 @@ export class InstagramChannelProvider implements ChannelProvider {
     } catch (err) {
       if (err instanceof InstagramApiError) {
         logger.warn("instagram.send_failed", { workspaceId: ctx.workspaceId, status: err.status, kind: err.kind });
-        if (err.kind === "rate_limit" || err.kind === "server") throw new RetryableError("Instagram is temporarily unavailable");
+        if (err.kind === "rate_limit" || err.kind === "server") throw new RetryableError("Instagram временно недоступен");
         if (err.status === 401 || /access token|OAuthException|\(#?190\)/i.test(err.message)) {
-          await db.update(channelConnections).set({ status: "token_expired", lastError: "Instagram rejected the access token — reconnect", updatedAt: new Date() }).where(eq(channelConnections.id, conn.id));
+          await db.update(channelConnections).set({ status: "token_expired", lastError: "Instagram отклонил токен доступа — переподключите аккаунт", updatedAt: new Date() }).where(eq(channelConnections.id, conn.id));
         }
-        throw new AppError(`Instagram refused the message: ${err.message.replace(/^Send message failed: /, "")}`, "validation");
+        throw new AppError(`Instagram не принял сообщение: ${err.message.replace(/^Отправка сообщения: ошибка — /, "")}`, "validation");
       }
       throw err;
     }

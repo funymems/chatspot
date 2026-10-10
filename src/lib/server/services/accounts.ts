@@ -19,12 +19,12 @@ export async function registerUser(
       .from(users)
       .where(sql`lower(${users.email}) = ${input.email.toLowerCase()}`)
       .limit(1);
-    if (existing) throw conflict("An account with this email already exists");
+    if (existing) throw conflict("Аккаунт с такой эл. почтой уже существует");
 
     const [user] = await tx.insert(users).values({ email: input.email, passwordHash }).returning({ id: users.id });
-    if (!user) throw new Error("Failed to create user");
+    if (!user) throw new Error("Не удалось создать пользователя");
     const firstName = input.fullName.split(/\s+/)[0] ?? input.fullName;
-    const workspace = await createWorkspace(user.id, opts.workspaceName ?? `${firstName}'s workspace`, {
+    const workspace = await createWorkspace(user.id, opts.workspaceName ?? `Пространство ${firstName}`, {
       tx,
       isDemo: opts.isDemo,
     });

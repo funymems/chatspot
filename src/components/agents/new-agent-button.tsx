@@ -13,9 +13,9 @@ import { createAgentAction } from "@/app/actions/agents";
 import { cn } from "@/lib/utils";
 
 const roles = [
-  { id: "general", label: "General assistant", text: "Answers questions about your business." },
-  { id: "support", label: "Customer support", text: "Resolves issues, hands off when stuck." },
-  { id: "sales", label: "Sales assistant", text: "Recommends products, guides to purchase." },
+  { id: "general", label: "Универсальный помощник", text: "Отвечает на вопросы о вашем бизнесе." },
+  { id: "support", label: "Поддержка клиентов", text: "Решает проблемы, а в сложных случаях зовёт человека." },
+  { id: "sales", label: "Консультант по продажам", text: "Советует товары и подводит к покупке." },
 ] as const;
 
 export function NewAgentButton({ slug, variant = "default", children }: { slug: string; variant?: React.ComponentProps<typeof Button>["variant"]; children?: React.ReactNode }) {
@@ -32,7 +32,7 @@ export function NewAgentButton({ slug, variant = "default", children }: { slug: 
       <Button variant={variant} onClick={() => setOpen(true)}>
         {children ?? (
           <>
-            <Plus aria-hidden /> New agent
+            <Plus aria-hidden /> Новый агент
           </>
         )}
       </Button>
@@ -56,13 +56,13 @@ export function NewAgentButton({ slug, variant = "default", children }: { slug: 
             }}
           >
             <DialogHeader>
-              <DialogTitle>New AI agent</DialogTitle>
-              <DialogDescription>Agents answer from the knowledge you give them and hand off to a human when they can&apos;t help.</DialogDescription>
+              <DialogTitle>Новый ИИ-агент</DialogTitle>
+              <DialogDescription>Агенты отвечают на основе знаний, которые вы им даёте, и передают диалог человеку, если не могут помочь.</DialogDescription>
             </DialogHeader>
-            <Field id="agent-name" label="Name" error={errors.name}>
-              <Input {...fieldA11y("agent-name", errors.name)} value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Aigerim from Support" autoFocus />
+            <Field id="agent-name" label="Имя" error={errors.name}>
+              <Input {...fieldA11y("agent-name", errors.name)} value={name} onChange={(e) => setName(e.target.value)} placeholder="Например: Айгерим из поддержки" autoFocus />
             </Field>
-            <div role="radiogroup" aria-label="Role" className="grid gap-2 sm:grid-cols-3">
+            <div role="radiogroup" aria-label="Роль" className="grid gap-2 sm:grid-cols-3">
               {roles.map((r) => (
                 <button
                   key={r.id}
@@ -80,15 +80,15 @@ export function NewAgentButton({ slug, variant = "default", children }: { slug: 
                 </button>
               ))}
             </div>
-            <Field id="agent-desc" label="Description (optional)" error={errors.description}>
+            <Field id="agent-desc" label="Описание (необязательно)" error={errors.description}>
               <Textarea {...fieldA11y("agent-desc", errors.description)} rows={2} value={description} onChange={(e) => setDescription(e.target.value)} />
             </Field>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={pending}>
-                {pending ? "Creating…" : "Create agent"}
+                {pending ? "Создаём…" : "Создать агента"}
               </Button>
             </DialogFooter>
           </form>

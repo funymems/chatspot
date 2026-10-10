@@ -40,7 +40,19 @@ function useSave(slug: string, agentId: string, section: "general" | "instructio
   return { save, pending, err };
 }
 
-const languages = ["English", "Russian", "Kazakh", "Uzbek", "Spanish", "German", "French", "Turkish", "Arabic"];
+// Values stay in English: they go into the AI prompt ("Always reply in …").
+const languages: { value: string; label: string }[] = [
+  { value: "Russian", label: "Русский" },
+  { value: "Kazakh", label: "Казахский" },
+  { value: "English", label: "Английский" },
+  { value: "Uzbek", label: "Узбекский" },
+  { value: "Spanish", label: "Испанский" },
+  { value: "German", label: "Немецкий" },
+  { value: "French", label: "Французский" },
+  { value: "Turkish", label: "Турецкий" },
+  { value: "Arabic", label: "Арабский" },
+];
+const toneLabels: Record<string, string> = { friendly: "Дружелюбный", professional: "Профессиональный", casual: "Непринуждённый", concise: "Лаконичный", enthusiastic: "Воодушевлённый" };
 
 export function GeneralForm({ slug, agent }: { slug: string; agent: AgentView }) {
   const [v, setV] = useState({
@@ -55,45 +67,45 @@ export function GeneralForm({ slug, agent }: { slug: string; agent: AgentView })
   return (
     <Card>
       <CardHeader>
-        <CardTitle>General</CardTitle>
-        <CardDescription>Who the agent is and how it talks.</CardDescription>
+        <CardTitle>Основное</CardTitle>
+        <CardDescription>Кто этот агент и как он общается.</CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 sm:grid-cols-2">
-        <TextField label="Name" value={v.name} onChange={(name) => setV({ ...v, name })} error={err("name")} />
+        <TextField label="Имя" value={v.name} onChange={(name) => setV({ ...v, name })} error={err("name")} />
         <SelectField
-          label="Role"
+          label="Роль"
           value={v.role}
           onChange={(role) => setV({ ...v, role })}
           options={[
-            { value: "general", label: "General assistant" },
-            { value: "support", label: "Customer support" },
-            { value: "sales", label: "Sales assistant" },
+            { value: "general", label: "Универсальный помощник" },
+            { value: "support", label: "Поддержка клиентов" },
+            { value: "sales", label: "Консультант по продажам" },
           ]}
         />
         <div className="sm:col-span-2">
-          <TextAreaField label="Description" value={v.description} onChange={(description) => setV({ ...v, description })} rows={2} error={err("description")} />
+          <TextAreaField label="Описание" value={v.description} onChange={(description) => setV({ ...v, description })} rows={2} error={err("description")} />
         </div>
         <SelectField
-          label="Tone"
+          label="Тон общения"
           value={v.tone as "friendly"}
           onChange={(tone) => setV({ ...v, tone })}
-          options={["friendly", "professional", "casual", "concise", "enthusiastic"].map((t) => ({ value: t as "friendly", label: t[0]!.toUpperCase() + t.slice(1) }))}
+          options={["friendly", "professional", "casual", "concise", "enthusiastic"].map((t) => ({ value: t as "friendly", label: toneLabels[t] ?? t }))}
         />
         <SelectField
-          label="Response language"
+          label="Язык ответов"
           value={v.languageMode as "match_user"}
           onChange={(languageMode) => setV({ ...v, languageMode })}
           options={[
-            { value: "match_user" as const, label: "Match the customer's language" },
-            { value: "fixed" as "match_user", label: "Always use one language" },
+            { value: "match_user" as const, label: "На языке клиента" },
+            { value: "fixed" as "match_user", label: "Всегда на одном языке" },
           ]}
         />
         {v.languageMode === "fixed" && (
-          <SelectField label="Language" value={v.language} onChange={(language) => setV({ ...v, language })} options={languages.map((l) => ({ value: l, label: l }))} error={err("language")} />
+          <SelectField label="Язык" value={v.language} onChange={(language) => setV({ ...v, language })} options={languages} error={err("language")} />
         )}
         <div className="sm:col-span-2">
           <Button onClick={() => save(v)} disabled={pending}>
-            {pending ? "Saving…" : "Save"}
+            {pending ? "Сохраняем…" : "Сохранить"}
           </Button>
         </div>
       </CardContent>
@@ -107,28 +119,28 @@ export function InstructionsForm({ slug, agent }: { slug: string; agent: AgentVi
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Instructions</CardTitle>
-        <CardDescription>The agent follows these and never invents facts that aren&apos;t here or in the knowledge base.</CardDescription>
+        <CardTitle>Инструкции</CardTitle>
+        <CardDescription>Агент следует этим инструкциям и не придумывает фактов, которых нет здесь или в базе знаний.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <TextAreaField
-          label="System instructions"
+          label="Системные инструкции"
           value={v.instructions}
           onChange={(instructions) => setV({ ...v, instructions })}
           rows={8}
           error={err("instructions")}
-          placeholder="You are a friendly assistant for Bloom Studio. Keep answers short. Suggest booking a free consultation when relevant."
+          placeholder="Ты — дружелюбный помощник студии Bloom. Отвечай коротко. Когда уместно, предлагай записаться на бесплатную консультацию."
         />
         <TextAreaField
-          label="Business information"
+          label="Информация о бизнесе"
           value={v.businessInfo}
           onChange={(businessInfo) => setV({ ...v, businessInfo })}
           rows={6}
           error={err("businessInfo")}
-          hint="Short facts always available to the agent: what you sell, location, hours, contacts. Put longer material in the Knowledge Base."
+          hint="Краткие факты, которые агент знает всегда: что вы продаёте, адрес, часы работы, контакты. Объёмные материалы добавляйте в базу знаний."
         />
         <Button onClick={() => save(v)} disabled={pending}>
-          {pending ? "Saving…" : "Save"}
+          {pending ? "Сохраняем…" : "Сохранить"}
         </Button>
       </CardContent>
     </Card>
@@ -152,62 +164,62 @@ export function SettingsForm({ slug, agent }: { slug: string; agent: AgentView }
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Behaviour</CardTitle>
+          <CardTitle>Поведение</CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <SwitchField label="Agent enabled" description="Disabled agents can't answer in automations." checked={v.enabled} onChange={(enabled) => setV({ ...v, enabled })} />
+          <SwitchField label="Агент включён" description="Выключенный агент не отвечает в автоматизациях." checked={v.enabled} onChange={(enabled) => setV({ ...v, enabled })} />
           <TextAreaField
-            label="Fallback response"
+            label="Запасной ответ"
             value={v.fallbackResponse}
             onChange={(fallbackResponse) => setV({ ...v, fallbackResponse })}
             rows={2}
             error={err("fallbackResponse")}
-            hint="Sent when the answer isn't in the knowledge base."
+            hint="Отправляется, если ответа нет в базе знаний."
           />
           <div className="space-y-2 rounded-lg border p-3">
-            <p className="text-sm font-medium">Escalation to a human</p>
+            <p className="text-sm font-medium">Передача диалога человеку</p>
             <SwitchField
-              label="When the customer asks for a person"
-              description="E.g. “talk to a human”, “позовите менеджера”."
+              label="Когда клиент просит позвать человека"
+              description="Например: «позовите менеджера», «хочу поговорить с человеком»."
               checked={v.escalateOnExplicitRequest}
               onChange={(escalateOnExplicitRequest) => setV({ ...v, escalateOnExplicitRequest })}
             />
-            <SwitchField label="When the agent can't answer" checked={v.escalateOnNoAnswer} onChange={(escalateOnNoAnswer) => setV({ ...v, escalateOnNoAnswer })} />
+            <SwitchField label="Когда агент не может ответить" checked={v.escalateOnNoAnswer} onChange={(escalateOnNoAnswer) => setV({ ...v, escalateOnNoAnswer })} />
             <TagListField
-              label="Escalation keywords"
+              label="Стоп-слова для передачи человеку"
               values={v.escalationKeywords}
               onChange={(escalationKeywords) => setV({ ...v, escalationKeywords })}
-              hint="Messages containing these always go to a human (e.g. refund, complaint)."
+              hint="Сообщения с этими словами всегда передаются человеку (например: возврат, жалоба)."
             />
             <p className="text-xs text-muted-foreground">
-              Hand-offs mark the conversation as “needs human” and create an in-app notification. No external alerts are sent.
+              При передаче диалог помечается как «Нужен человек» и создаётся уведомление в приложении. Внешние оповещения не отправляются.
             </p>
           </div>
           <Button onClick={() => save(v)} disabled={pending}>
-            {pending ? "Saving…" : "Save settings"}
+            {pending ? "Сохраняем…" : "Сохранить настройки"}
           </Button>
         </CardContent>
       </Card>
 
       <Card className="border-destructive/30">
         <CardHeader>
-          <CardTitle className="text-destructive">Delete agent</CardTitle>
-          <CardDescription>Removes the agent, its knowledge base and unanswered questions. Automations using it will fail validation.</CardDescription>
+          <CardTitle className="text-destructive">Удаление агента</CardTitle>
+          <CardDescription>Удаляет агента, его базу знаний и вопросы без ответа. Автоматизации, которые его используют, перестанут проходить проверку.</CardDescription>
         </CardHeader>
         <CardContent>
           <Button variant="destructive" onClick={() => setConfirm(true)} disabled={deleting}>
-            <Trash2 aria-hidden /> Delete agent
+            <Trash2 aria-hidden /> Удалить агента
           </Button>
         </CardContent>
       </Card>
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete “{agent.name}”?</AlertDialogTitle>
-            <AlertDialogDescription>This permanently deletes the agent and its knowledge base. This can&apos;t be undone.</AlertDialogDescription>
+            <AlertDialogTitle>Удалить «{agent.name}»?</AlertDialogTitle>
+            <AlertDialogDescription>Агент и его база знаний будут удалены навсегда. Это действие нельзя отменить.</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               className="bg-destructive text-white hover:bg-destructive/90"
               onClick={() =>
@@ -219,7 +231,7 @@ export function SettingsForm({ slug, agent }: { slug: string; agent: AgentView }
                 })
               }
             >
-              Delete agent
+              Удалить агента
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

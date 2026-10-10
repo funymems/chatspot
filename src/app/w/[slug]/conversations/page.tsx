@@ -17,15 +17,15 @@ import { AppError } from "@/lib/server/errors";
 import { idSchema } from "@/lib/validation/automation";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Conversations" };
+export const metadata: Metadata = { title: "Диалоги" };
 
 type Props = PageProps<"/w/[slug]/conversations">;
 
 const filters: { value: ConversationStatus | "all"; label: string }[] = [
-  { value: "open", label: "Open" },
-  { value: "needs_human", label: "Needs human" },
-  { value: "resolved", label: "Resolved" },
-  { value: "all", label: "All" },
+  { value: "open", label: "Открытые" },
+  { value: "needs_human", label: "Нужен человек" },
+  { value: "resolved", label: "Решённые" },
+  { value: "all", label: "Все" },
 ];
 
 export default function ConversationsPage({ params, searchParams }: Props) {
@@ -48,10 +48,10 @@ async function Header({ params }: { params: Props["params"] }) {
   await requireWorkspace(slug);
   return (
     <PageHeader
-      title="Conversations"
+      title="Диалоги"
       description={
         <span className="inline-flex items-center gap-2">
-          Messages from Instagram (when connected) and the demo-channel simulator. Simulated conversations are marked “Demo channel”.
+          Сообщения из Instagram (если он подключён) и из симулятора. Тестовые диалоги отмечены как «Демо-канал».
         </span>
       }
       actions={<NewSimulationButton slug={slug} />}
@@ -90,9 +90,9 @@ async function Inbox({ params, searchParams }: Pick<Props, "params" | "searchPar
       <aside className={cn("flex w-full flex-col border-r md:w-80 lg:w-96", selected && "hidden md:flex")}>
         <div className="space-y-2 border-b p-3">
           <Suspense>
-            <SearchFilter placeholder="Search conversations" />
+            <SearchFilter placeholder="Поиск по диалогам" />
           </Suspense>
-          <nav className="flex flex-wrap gap-1" aria-label="Filter by status">
+          <nav className="flex flex-wrap gap-1" aria-label="Фильтр по статусу">
             {filters.map((f) => (
               <Link
                 key={f.value}
@@ -112,7 +112,7 @@ async function Inbox({ params, searchParams }: Pick<Props, "params" | "searchPar
         <ul className="flex-1 divide-y overflow-y-auto">
           {list.length === 0 && (
             <li className="p-6">
-              <EmptyState compact icon={MessagesSquare} title="No conversations" description={q ? "Nothing matches your search." : "Start a simulated conversation to see how automations reply."} />
+              <EmptyState compact icon={MessagesSquare} title="Диалогов нет" description={q ? "По вашему запросу ничего не найдено." : "Запустите тестовый диалог, чтобы посмотреть, как отвечают автоматизации."} />
             </li>
           )}
           {list.map((c) => (
@@ -128,17 +128,17 @@ async function Inbox({ params, searchParams }: Pick<Props, "params" | "searchPar
                 <span className="min-w-0 flex-1">
                   <span className="flex items-center gap-2">
                     <span className="truncate text-sm font-medium">{contactName({ firstName: c.firstName, lastName: c.lastName })}</span>
-                    {c.status === "needs_human" && <span className="size-2 shrink-0 rounded-full bg-destructive" aria-label="Needs human" />}
+                    {c.status === "needs_human" && <span className="size-2 shrink-0 rounded-full bg-destructive" aria-label="Нужен человек" />}
                     {c.lastMessageAt && <RelativeTime date={c.lastMessageAt} className="ml-auto shrink-0 text-[11px] text-muted-foreground" />}
                   </span>
-                  <span className="block truncate text-xs text-muted-foreground">{c.preview || "No messages"}</span>
+                  <span className="block truncate text-xs text-muted-foreground">{c.preview || "Нет сообщений"}</span>
                 </span>
               </Link>
             </li>
           ))}
         </ul>
       </aside>
-      <section className={cn("min-w-0 flex-1", !selected && "hidden md:flex")} aria-label="Conversation">
+      <section className={cn("min-w-0 flex-1", !selected && "hidden md:flex")} aria-label="Диалог">
         {selected ? (
           <ConversationView
             key={selected.conversation.id}
@@ -176,7 +176,7 @@ async function Inbox({ params, searchParams }: Pick<Props, "params" | "searchPar
             }))}
           />
         ) : (
-          <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground">Select a conversation</div>
+          <div className="flex flex-1 items-center justify-center p-6 text-sm text-muted-foreground">Выберите диалог</div>
         )}
       </section>
     </div>

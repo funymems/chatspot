@@ -20,7 +20,7 @@ import {
  */
 export class MockChannelProvider implements ChannelProvider {
   readonly id = "mock";
-  readonly displayName = "Simulator";
+  readonly displayName = "Симулятор";
 
   constructor(private readonly tx?: Executor) {}
 

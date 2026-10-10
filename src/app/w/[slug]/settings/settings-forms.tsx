@@ -18,7 +18,7 @@ function useSingleFieldForm(initial: string, save: (value: string) => Promise<Ac
       const res = await save(value);
       if (res.ok) {
         setError(undefined);
-        toast.success(res.message ?? "Saved");
+        toast.success(res.message ?? "Сохранено");
       } else {
         setError(res.fieldErrors?.[field]?.[0] ?? res.error);
       }
@@ -33,9 +33,9 @@ export function WorkspaceForm({ slug, name, canEdit }: { slug: string; name: str
     <form onSubmit={f.submit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
       <Field
         id="ws-name"
-        label="Workspace name"
+        label="Название рабочего пространства"
         error={f.error}
-        hint={canEdit ? undefined : "Only owners and admins can rename the workspace."}
+        hint={canEdit ? undefined : "Переименовать пространство могут только владельцы и администраторы."}
         className="flex-1"
       >
         <Input
@@ -47,7 +47,7 @@ export function WorkspaceForm({ slug, name, canEdit }: { slug: string; name: str
       </Field>
       {canEdit && (
         <Button type="submit" disabled={!f.dirty || f.pending}>
-          {f.pending ? "Saving…" : "Save"}
+          {f.pending ? "Сохраняем…" : "Сохранить"}
         </Button>
       )}
     </form>
@@ -58,11 +58,11 @@ export function ProfileForm({ fullName }: { fullName: string }) {
   const f = useSingleFieldForm(fullName, (v) => updateProfileAction({ fullName: v }), "fullName");
   return (
     <form onSubmit={f.submit} className="flex flex-col gap-3 sm:flex-row sm:items-end">
-      <Field id="profile-name" label="Full name" error={f.error} className="flex-1">
+      <Field id="profile-name" label="Имя и фамилия" error={f.error} className="flex-1">
         <Input {...fieldA11y("profile-name", f.error)} value={f.value} onChange={(e) => f.setValue(e.target.value)} />
       </Field>
       <Button type="submit" disabled={!f.dirty || f.pending}>
-        {f.pending ? "Saving…" : "Save"}
+        {f.pending ? "Сохраняем…" : "Сохранить"}
       </Button>
     </form>
   );

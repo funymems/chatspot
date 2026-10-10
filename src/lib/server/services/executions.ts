@@ -36,7 +36,7 @@ export async function getExecutionDetail(ctx: WorkspaceContext, executionId: str
     .from(automationExecutions)
     .where(and(eq(automationExecutions.id, executionId), eq(automationExecutions.workspaceId, ctx.workspaceId)))
     .limit(1);
-  if (!exec) throw notFound("Run");
+  if (!exec) throw notFound("запуск");
   const [[version], [automation], logs, transcript] = await Promise.all([
     db.select().from(automationVersions).where(eq(automationVersions.id, exec.versionId)).limit(1),
     db.select({ id: automations.id, name: automations.name }).from(automations).where(eq(automations.id, exec.automationId)).limit(1),

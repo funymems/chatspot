@@ -23,7 +23,7 @@ export function NewContactButton({ slug }: { slug: string }) {
   return (
     <>
       <Button onClick={() => setOpen(true)}>
-        <Plus aria-hidden /> New contact
+        <Plus aria-hidden /> Новый контакт
       </Button>
       <Dialog
         open={open}
@@ -55,25 +55,25 @@ export function NewContactButton({ slug }: { slug: string }) {
             }}
           >
             <DialogHeader>
-              <DialogTitle>New contact</DialogTitle>
-              <DialogDescription>Add someone manually. Contacts from conversations are created automatically.</DialogDescription>
+              <DialogTitle>Новый контакт</DialogTitle>
+              <DialogDescription>Добавьте человека вручную. Контакты из диалогов создаются автоматически.</DialogDescription>
             </DialogHeader>
             {formError && <p className="rounded-lg bg-destructive/5 p-2.5 text-sm text-destructive">{formError}</p>}
             <div className="grid gap-3 sm:grid-cols-2">
-              <TextField label="First name" value={v.firstName} onChange={(firstName) => setV({ ...v, firstName })} error={err("firstName")} />
-              <TextField label="Last name" value={v.lastName} onChange={(lastName) => setV({ ...v, lastName })} error={err("lastName")} />
-              <TextField label="Email" type="email" value={v.email} onChange={(email) => setV({ ...v, email })} error={err("email")} />
-              <TextField label="Phone" value={v.phone} onChange={(phone) => setV({ ...v, phone })} error={err("phone")} placeholder="+7 701 123 4567" />
+              <TextField label="Имя" value={v.firstName} onChange={(firstName) => setV({ ...v, firstName })} error={err("firstName")} />
+              <TextField label="Фамилия" value={v.lastName} onChange={(lastName) => setV({ ...v, lastName })} error={err("lastName")} />
+              <TextField label="Эл. почта" type="email" value={v.email} onChange={(email) => setV({ ...v, email })} error={err("email")} />
+              <TextField label="Телефон" value={v.phone} onChange={(phone) => setV({ ...v, phone })} error={err("phone")} placeholder="+7 701 123 4567" />
             </div>
-            <SelectField label="Lead status" value={v.leadStatus} onChange={(leadStatus) => setV({ ...v, leadStatus: leadStatus as "new" })} options={leadStatusOptions} />
-            <TagListField label="Tags" values={v.tags} onChange={(tags) => setV({ ...v, tags })} />
-            <TextAreaField label="Notes" value={v.notes} onChange={(notes) => setV({ ...v, notes })} rows={2} />
+            <SelectField label="Статус лида" value={v.leadStatus} onChange={(leadStatus) => setV({ ...v, leadStatus: leadStatus as "new" })} options={leadStatusOptions} />
+            <TagListField label="Теги" values={v.tags} onChange={(tags) => setV({ ...v, tags })} />
+            <TextAreaField label="Заметки" value={v.notes} onChange={(notes) => setV({ ...v, notes })} rows={2} />
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setOpen(false)}>
-                Cancel
+                Отмена
               </Button>
               <Button type="submit" disabled={pending}>
-                {pending ? "Saving…" : "Create contact"}
+                {pending ? "Сохраняем…" : "Создать контакт"}
               </Button>
             </DialogFooter>
           </form>

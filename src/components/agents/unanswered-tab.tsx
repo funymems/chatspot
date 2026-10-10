@@ -17,12 +17,12 @@ export function UnansweredTab({ slug, questions }: { slug: string; questions: Un
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Unanswered questions</CardTitle>
-        <CardDescription>Questions the agent couldn&apos;t answer from its knowledge. Answer them once and the agent will know next time.</CardDescription>
+        <CardTitle>Вопросы без ответа</CardTitle>
+        <CardDescription>Вопросы, на которые агент не нашёл ответа в своей базе знаний. Ответьте один раз — и в следующий раз агент будет знать ответ.</CardDescription>
       </CardHeader>
       <CardContent>
         {open.length === 0 ? (
-          <EmptyState compact icon={CircleHelp} title="Nothing waiting" description="New gaps in the knowledge base show up here." />
+          <EmptyState compact icon={CircleHelp} title="Новых вопросов нет" description="Здесь появятся вопросы, ответов на которые нет в базе знаний." />
         ) : (
           <ul className="space-y-3">
             {open.map((q) => (
@@ -32,7 +32,7 @@ export function UnansweredTab({ slug, questions }: { slug: string; questions: Un
         )}
         {done.length > 0 && (
           <details className="mt-4 text-sm">
-            <summary className="cursor-pointer text-muted-foreground">{done.length} resolved</summary>
+            <summary className="cursor-pointer text-muted-foreground">Решено: {done.length}</summary>
             <ul className="mt-2 space-y-1">
               {done.map((q) => (
                 <li key={q.id} className="flex items-center gap-2 text-muted-foreground">
@@ -60,15 +60,15 @@ function QuestionRow({ slug, q }: { slug: string; q: UnansweredView }) {
     <li className="space-y-2 rounded-lg border p-3">
       <p className="text-sm font-medium">“{q.question}”</p>
       <p className="text-xs text-muted-foreground">
-        Asked <RelativeTime date={q.createdAt} />
+        Задан <RelativeTime date={q.createdAt} />
       </p>
-      <Textarea rows={2} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Write the answer the agent should give…" aria-label={`Answer for: ${q.question}`} />
+      <Textarea rows={2} value={answer} onChange={(e) => setAnswer(e.target.value)} placeholder="Напишите ответ, который должен давать агент…" aria-label={`Ответ на вопрос: ${q.question}`} />
       <div className="flex gap-2">
         <Button size="sm" disabled={pending || !answer.trim()} onClick={() => resolve(true)}>
-          Add to knowledge base
+          Добавить в базу знаний
         </Button>
         <Button size="sm" variant="ghost" disabled={pending} onClick={() => resolve(false)}>
-          Dismiss
+          Отклонить
         </Button>
       </div>
     </li>

@@ -12,7 +12,7 @@ import { logger } from "@/lib/server/logger";
 export const DEMO_ACCOUNT = {
   email: "demo@chatspot.local",
   password: "chatspot-demo-2026",
-  fullName: "Demo User",
+  fullName: "Демо-пользователь",
 } as const;
 
 /** Idempotent: creates the demo account + workspace if missing. */
@@ -27,7 +27,7 @@ export async function seedDemo() {
     logger.info("seed.skip", { reason: "demo account exists" });
     return { created: false };
   }
-  const { workspace } = await registerUser(DEMO_ACCOUNT, { workspaceName: "Demo Workspace", isDemo: true });
+  const { workspace } = await registerUser(DEMO_ACCOUNT, { workspaceName: "Демо-пространство", isDemo: true });
   logger.info("seed.done", { workspace: workspace.slug });
   return { created: true, workspaceSlug: workspace.slug };
 }

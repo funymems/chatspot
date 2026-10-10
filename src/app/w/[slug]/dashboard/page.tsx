@@ -29,7 +29,7 @@ import { getDashboard } from "@/lib/server/services/dashboard";
 import { listTemplates } from "@/lib/server/services/templates";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = { title: "Главная" };
 
 type Props = PageProps<"/w/[slug]/dashboard">;
 
@@ -55,41 +55,40 @@ async function Dashboard({ params }: { params: Props["params"] }) {
   return (
     <PageContainer>
       <PageHeader
-        title={`Welcome back, ${firstName}`}
-        description={`Here's what's happening in ${ctx.workspaceName}.`}
+        title={`С возвращением, ${firstName}`}
+        description={`Что происходит в «${ctx.workspaceName}».`}
         actions={<NewAutomationButton slug={slug} templates={templateOptions} />}
       />
 
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <Kpi
           icon={Users}
-          label="Total contacts"
+          label="Всего контактов"
           value={d.contacts.total}
-          hint={d.contacts.demo > 0 ? `incl. ${d.contacts.demo} demo contacts` : "People who interacted with you"}
+          hint={d.contacts.demo > 0 ? `в т. ч. демо-контактов: ${d.contacts.demo}` : "Люди, которые с вами общались"}
         />
         <Kpi
           icon={Workflow}
-          label="Active automations"
+          label="Активные автоматизации"
           value={d.automations.active}
-          hint={`${d.automations.total} total`}
+          hint={`всего: ${d.automations.total}`}
           href={`/w/${slug}/automations?status=active`}
         />
         <Kpi
           icon={PlayCircle}
-          label="Automation executions"
+          label="Запуски автоматизаций"
           value={d.executions.total}
           hint={
             d.executions.total === 0
-              ? "No runs yet"
-              : `${d.executions.last30} in the last 30 days${successRate !== null ? ` · ${successRate}% succeeded` : ""}`
+              ? "Запусков пока нет"
+              : `${d.executions.last30} за 30 дней${successRate !== null ? ` · ${successRate}% успешно` : ""}`
           }
         />
-        <Kpi icon={Target} label="Leads collected" value={d.contacts.leads} hint="Contacts with email, phone or qualified status" />
+        <Kpi icon={Target} label="Собрано лидов" value={d.contacts.leads} hint="Контакты с эл. почтой, телефоном или статусом «квалифицирован»" />
       </div>
       {d.executions.test > 0 && (
         <p className="-mt-2 text-xs text-muted-foreground">
-          Execution counts include {d.executions.test} test run{d.executions.test === 1 ? "" : "s"} from the simulator — no
-          external channel is connected yet.
+          В числе запусков есть тестовые из симулятора и конструктора: {d.executions.test}.
         </p>
       )}
 
@@ -98,16 +97,16 @@ async function Dashboard({ params }: { params: Props["params"] }) {
       <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
         <Card>
           <CardHeader>
-            <CardTitle>Automation performance</CardTitle>
-            <CardDescription>Runs in the last 30 days</CardDescription>
+            <CardTitle>Эффективность автоматизаций</CardTitle>
+            <CardDescription>Запуски за последние 30 дней</CardDescription>
           </CardHeader>
           <CardContent>
             {d.perAutomation.length === 0 ? (
               <EmptyState
                 compact
                 icon={Workflow}
-                title="No automations yet"
-                description="Performance appears here once your automations start running."
+                title="Автоматизаций пока нет"
+                description="Статистика появится, когда автоматизации начнут работать."
               />
             ) : (
               <ul className="divide-y">
@@ -127,7 +126,7 @@ async function Dashboard({ params }: { params: Props["params"] }) {
                       <AutomationStatusBadge status={a.status} />
                       <div className="w-24 text-right text-xs tabular-nums text-muted-foreground">
                         <span className="block text-sm font-medium text-foreground">{a.runs} runs</span>
-                        {rate !== null ? `${rate}% success` : "no runs"}
+                        {rate !== null ? `${rate}% успешно` : "нет запусков"}
                       </div>
                     </li>
                   );
@@ -139,14 +138,14 @@ async function Dashboard({ params }: { params: Props["params"] }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Quick actions</CardTitle>
+            <CardTitle>Быстрые действия</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-2">
             <NewAutomationButton slug={slug} templates={templateOptions} variant="outline" className="h-auto justify-start py-2.5">
               <Workflow className="text-primary" aria-hidden />
               <span className="text-left">
-                <span className="block font-medium">Create an automation</span>
-                <span className="block text-xs font-normal text-muted-foreground">Start from a blank starter flow</span>
+                <span className="block font-medium">Создать автоматизацию</span>
+                <span className="block text-xs font-normal text-muted-foreground">С чистого базового сценария</span>
               </span>
             </NewAutomationButton>
             <NewAutomationButton
@@ -158,16 +157,16 @@ async function Dashboard({ params }: { params: Props["params"] }) {
             >
               <LayoutTemplate className="text-primary" aria-hidden />
               <span className="text-left">
-                <span className="block font-medium">Start from a template</span>
-                <span className="block text-xs font-normal text-muted-foreground">{templates.length} ready-made flows</span>
+                <span className="block font-medium">Начать с шаблона</span>
+                <span className="block text-xs font-normal text-muted-foreground">Готовых сценариев: {templates.length}</span>
               </span>
             </NewAutomationButton>
             <Button asChild variant="outline" className="h-auto justify-start py-2.5">
               <Link href={`/w/${slug}/agents`}>
                 <Bot className="text-primary" aria-hidden />
                 <span className="text-left">
-                  <span className="block font-medium">Create an AI agent</span>
-                  <span className="block text-xs font-normal text-muted-foreground">Answers from your knowledge base</span>
+                  <span className="block font-medium">Создать ИИ-агента</span>
+                  <span className="block text-xs font-normal text-muted-foreground">Отвечает по вашей базе знаний</span>
                 </span>
               </Link>
             </Button>
@@ -175,8 +174,8 @@ async function Dashboard({ params }: { params: Props["params"] }) {
               <Link href={`/w/${slug}/settings#integrations`}>
                 <Plug className="text-primary" aria-hidden />
                 <span className="text-left">
-                  <span className="block font-medium">Connect Instagram</span>
-                  <span className="block text-xs font-normal text-muted-foreground">Receive Direct messages in your inbox</span>
+                  <span className="block font-medium">Подключить Instagram</span>
+                  <span className="block text-xs font-normal text-muted-foreground">Сообщения из Direct во входящих</span>
                 </span>
               </Link>
             </Button>
@@ -187,11 +186,11 @@ async function Dashboard({ params }: { params: Props["params"] }) {
       <div className="grid gap-6 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle>Recent activity</CardTitle>
+            <CardTitle>Последние события</CardTitle>
           </CardHeader>
           <CardContent>
             {d.activity.length === 0 ? (
-              <EmptyState compact icon={Activity} title="No activity yet" />
+              <EmptyState compact icon={Activity} title="Событий пока нет" />
             ) : (
               <ol className="space-y-3">
                 {d.activity.map((e) => (
@@ -210,15 +209,15 @@ async function Dashboard({ params }: { params: Props["params"] }) {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recent conversations</CardTitle>
+            <CardTitle>Последние диалоги</CardTitle>
           </CardHeader>
           <CardContent>
             {d.recentConversations.length === 0 ? (
               <EmptyState
                 compact
                 icon={MessagesSquare}
-                title="No conversations yet"
-                description="Conversations from the channel simulator will show up here."
+                title="Диалогов пока нет"
+                description="Здесь появятся диалоги из Instagram и симулятора."
               />
             ) : (
               <ul className="divide-y">
@@ -229,9 +228,9 @@ async function Dashboard({ params }: { params: Props["params"] }) {
                     </span>
                     <span className="min-w-0 flex-1">
                       <span className="block truncate font-medium">
-                        {[c.firstName, c.lastName].filter(Boolean).join(" ") || "Unknown contact"}
+                        {[c.firstName, c.lastName].filter(Boolean).join(" ") || "Неизвестный контакт"}
                       </span>
-                      <span className="block truncate text-xs text-muted-foreground">{c.preview || "No messages"}</span>
+                      <span className="block truncate text-xs text-muted-foreground">{c.preview || "Нет сообщений"}</span>
                     </span>
                     {c.lastMessageAt && <RelativeTime date={c.lastMessageAt} className="text-xs text-muted-foreground" />}
                   </li>
@@ -253,7 +252,7 @@ function Kpi({ icon: Icon, label, value, hint, href }: { icon: LucideIcon; label
           <span>{label}</span>
           <Icon className="size-4" aria-hidden />
         </div>
-        <p className="text-3xl font-semibold tabular-nums tracking-tight">{value.toLocaleString("en")}</p>
+        <p className="text-3xl font-semibold tabular-nums tracking-tight">{value.toLocaleString("ru")}</p>
         <p className="truncate text-xs text-muted-foreground">{hint}</p>
       </CardContent>
     </Card>
@@ -269,24 +268,24 @@ function Kpi({ icon: Icon, label, value, hint, href }: { icon: LucideIcon; label
 
 function GettingStarted({ slug, templates }: { slug: string; templates: TemplateOption[] }) {
   const steps = [
-    { done: true, title: "Create your workspace", text: "You're in! Everything here is private to this workspace." },
-    { done: false, title: "Create your first automation", text: "Start from scratch or pick one of the ready-made templates." },
-    { done: false, title: "Test it with a simulated message", text: "The test runner arrives with the execution engine (stage 5)." },
+    { done: true, title: "Создайте рабочее пространство", text: "Готово! Всё здесь видно только участникам этого пространства." },
+    { done: false, title: "Создайте первую автоматизацию", text: "С нуля или на основе готового шаблона." },
+    { done: false, title: "Проверьте её на тестовом сообщении", text: "Запустите тест в конструкторе, прежде чем включать автоматизацию." },
   ];
   return (
     <Card className="border-primary/30 bg-gradient-to-br from-accent/60 to-card">
       <CardHeader>
-        <CardTitle>Get started</CardTitle>
-        <CardDescription>Three steps to your first working automation.</CardDescription>
+        <CardTitle>С чего начать</CardTitle>
+        <CardDescription>Три шага до первой работающей автоматизации.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         <ol className="space-y-3">
           {steps.map((s) => (
             <li key={s.title} className="flex gap-3">
               {s.done ? (
-                <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" aria-label="Done" />
+                <CheckCircle2 className="mt-0.5 size-5 shrink-0 text-success" aria-label="Выполнено" />
               ) : (
-                <Circle className="mt-0.5 size-5 shrink-0 text-muted-foreground/50" aria-label="To do" />
+                <Circle className="mt-0.5 size-5 shrink-0 text-muted-foreground/50" aria-label="Не выполнено" />
               )}
               <span>
                 <span className={cn("block text-sm font-medium", s.done && "text-muted-foreground line-through")}>{s.title}</span>
@@ -296,7 +295,7 @@ function GettingStarted({ slug, templates }: { slug: string; templates: Template
           ))}
         </ol>
         <NewAutomationButton slug={slug} templates={templates}>
-          Create your first automation <ArrowRight aria-hidden />
+          Создать первую автоматизацию <ArrowRight aria-hidden />
         </NewAutomationButton>
       </CardContent>
     </Card>

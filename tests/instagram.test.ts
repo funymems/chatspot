@@ -253,9 +253,9 @@ describe("Instagram replies through automations", () => {
   it("stores DMs but sends nothing while auto-replies are off", async () => {
     mockMeta();
     sentBodies.length = 0;
-    const flow = await createAutomation(ctx, { name: "IG hello" }); // keyword "hello" → message → end
+    const flow = await createAutomation(ctx, { name: "IG hello" }); // keyword "привет" → message → end
     await activateAutomation(ctx, flow.id);
-    await deliver(dmFrom("2001", "m-off", "hello"));
+    await deliver(dmFrom("2001", "m-off", "привет"));
     expect(sentBodies).toHaveLength(0);
     const [contact] = await db.select().from(contacts).where(and(eq(contacts.workspaceId, ctx.workspaceId), eq(contacts.channelUserId, "2001")));
     expect(contact).toMatchObject({ firstName: "Dana", lastName: "Bek", customFields: { instagram_username: "dana.bek" } });
@@ -265,10 +265,10 @@ describe("Instagram replies through automations", () => {
     mockMeta();
     sentBodies.length = 0;
     await setInstagramAutoReply(ctx, true);
-    await deliver(dmFrom("2002", "m-on", "hello there"));
+    await deliver(dmFrom("2002", "m-on", "привет всем"));
     expect(sentBodies).toHaveLength(1);
     expect(sentBodies[0]!.recipient.id).toBe("2002");
-    expect(String(sentBodies[0]!.message.text)).toContain("Hi Dana!");
+    expect(String(sentBodies[0]!.message.text)).toContain("Привет, Dana!");
     const out = await db.select().from(messages).where(and(eq(messages.workspaceId, ctx.workspaceId), eq(messages.kind, "outbound"), eq(messages.deliveryStatus, "sent")));
     expect(out.some((m) => (m.payload as { externalId?: string }).externalId === "mid.out.1")).toBe(true);
   });
@@ -279,9 +279,9 @@ describe("Instagram replies through automations", () => {
     const t = (await listTemplates(ctx)).find((x) => x.slug === "course-sales")!;
     const course = await createAutomationFromTemplate(ctx, t.id);
     await activateAutomation(ctx, course.id);
-    await deliver(dmFrom("2003", "m-c1", "COURSE"));
-    expect(sentBodies[0]!.message).toMatchObject({ quick_replies: [{ content_type: "text", title: "Beginner", payload: "Beginner" }, { content_type: "text", title: "Advanced" }] });
-    await deliver(dmFrom("2003", "m-c2", "Beginner"));
+    await deliver(dmFrom("2003", "m-c1", "КУРС"));
+    expect(sentBodies[0]!.message).toMatchObject({ quick_replies: [{ content_type: "text", title: "Для начинающих", payload: "Для начинающих" }, { content_type: "text", title: "Продвинутый" }] });
+    await deliver(dmFrom("2003", "m-c2", "Для начинающих"));
     const tmpl = sentBodies[1]!.message as { attachment: { payload: { template_type: string; buttons: { type: string; url: string }[] } } };
     expect(tmpl.attachment.payload.template_type).toBe("button");
     expect(tmpl.attachment.payload.buttons[0]).toMatchObject({ type: "web_url", url: "https://example.com/courses/beginner" });
@@ -295,7 +295,7 @@ describe("Instagram replies through automations", () => {
       .innerJoin(contacts, eq(contacts.id, conversations.contactId))
       .where(and(eq(conversations.workspaceId, ctx.workspaceId), eq(contacts.channelUserId, "2002")));
     await db.update(messages).set({ createdAt: new Date(Date.now() - 25 * 3_600_000) }).where(eq(messages.conversationId, conv!.id));
-    await expect(sendHumanReply(ctx, conv!.id, "late reply")).rejects.toMatchObject({ message: expect.stringContaining("24-hour") });
+    await expect(sendHumanReply(ctx, conv!.id, "late reply")).rejects.toMatchObject({ message: expect.stringContaining("24-часовое") });
     await setInstagramAutoReply(ctx, false);
   });
 });

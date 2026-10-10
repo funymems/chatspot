@@ -9,7 +9,7 @@ import { GRAPH_SCHEMA_VERSION, nodeConfigSchemas, nodeTypes, outputHandles, type
  * from the model is ever executed.
  */
 export const draftGraphSchema = z.object({
-  name: z.string().max(200).default("Generated automation"),
+  name: z.string().max(200).default("Сгенерированная автоматизация"),
   description: z.string().max(1000).default(""),
   nodes: z
     .array(
@@ -41,7 +41,7 @@ export function repairDraft(draft: DraftGraph): RepairReport {
 
   for (const raw of draft.nodes) {
     if (!(nodeTypes as string[]).includes(raw.type)) {
-      fixes.push(`Removed a node with unknown type “${raw.type}”`);
+      fixes.push(`Удалён блок неизвестного типа «${raw.type}»`);
       continue;
     }
     const type = raw.type as NodeType;
@@ -54,7 +54,7 @@ export function repairDraft(draft: DraftGraph): RepairReport {
     try {
       config = JSON.parse(raw.config_json || "{}");
     } catch {
-      fixes.push(`Reset the configuration of “${raw.label ?? raw.id}” (it wasn't valid JSON)`);
+      fixes.push(`Сброшены настройки блока «${raw.label ?? raw.id}» (некорректный JSON)`);
     }
     const base = defaultNodeData(type);
     const cfg = config && typeof config === "object" && !Array.isArray(config) ? (config as Record<string, unknown>) : {};
@@ -75,10 +75,10 @@ export function repairDraft(draft: DraftGraph): RepairReport {
   const triggers = nodes.filter((n) => n.type === "trigger");
   if (triggers.length === 0) {
     nodes.unshift({ id: "trigger", type: "trigger", position: { x: 0, y: 0 }, data: { ...defaultNodeData("trigger"), kind: "manual" } });
-    fixes.push("Added a manual trigger because none was generated");
+    fixes.push("Добавлен ручной триггер, потому что генератор его не создал");
   } else if (triggers.length > 1) {
     for (const t of triggers.slice(1)) nodes.splice(nodes.indexOf(t), 1);
-    fixes.push("Kept only the first trigger");
+    fixes.push("Оставлен только первый триггер");
   }
 
   const byId = new Map(nodes.map((n) => [n.id, n]));
@@ -88,7 +88,7 @@ export function repairDraft(draft: DraftGraph): RepairReport {
     const target = byId.get(idMap.get(e.target) ?? e.target);
     const handle = (["out", "true", "false"].includes(e.handle) ? e.handle : "out") as GraphEdge["sourceHandle"];
     if (!source || !target || source === target || target.type === "trigger" || !outputHandles[source.type].includes(handle)) {
-      fixes.push("Removed an invalid connection");
+      fixes.push("Удалена некорректная связь");
       continue;
     }
     if (edges.some((x) => x.source === source.id && x.sourceHandle === handle)) continue;
@@ -105,7 +105,7 @@ export function repairDraft(draft: DraftGraph): RepairReport {
         nodes.push(end);
       }
       edges.push({ id: `e_${n.id}_${handle}_${end.id}`, source: n.id, target: end.id, sourceHandle: handle });
-      fixes.push(`Connected the open ${handle === "out" ? "output" : `“${handle}” branch`} of “${n.label ?? n.type}” to an End node`);
+      fixes.push(`Свободный ${handle === "out" ? "выход" : `выход «${handle === "true" ? "Да" : handle === "false" ? "Нет" : handle}»`} блока «${n.label ?? n.type}» подключён к блоку «Конец»`);
     }
   }
   if (!nodes.some((n) => n.type === "end")) {

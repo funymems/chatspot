@@ -32,7 +32,7 @@ export { hashGraph };
 /** Parses the structural shape of a graph (configs may still be incomplete in a draft). */
 function parseGraph(graph: unknown): AutomationGraph {
   const parsed = automationGraph.safeParse(graph);
-  if (!parsed.success) throw new AppError("The flow data is malformed and can't be saved", "validation");
+  if (!parsed.success) throw new AppError("Данные сценария повреждены, сохранить их нельзя", "validation");
   return parsed.data;
 }
 
@@ -43,7 +43,7 @@ async function getOwned(ctx: WorkspaceContext, id: string) {
     .from(automations)
     .where(and(eq(automations.id, id), eq(automations.workspaceId, ctx.workspaceId)))
     .limit(1);
-  if (!row) throw notFound("Automation");
+  if (!row) throw notFound("автоматизация");
   return row;
 }
 
@@ -146,10 +146,10 @@ export async function createAutomation(
       createdBy: ctx.userId,
     })
     .returning();
-  if (!row) throw new Error("Insert failed");
+  if (!row) throw new Error("Не удалось сохранить");
   await recordActivity(ctx, {
     type: "automation.created",
-    summary: `Automation “${row.name}” created`,
+    summary: `Создана автоматизация «${row.name}»`,
     entityType: "automation",
     entityId: row.id,
     metadata: { origin: row.origin },
@@ -185,7 +185,7 @@ export async function saveAutomationGraph(ctx: WorkspaceContext, id: string, gra
     .returning({ revision: automations.revision });
   if (!row) {
     await getOwned(ctx, id); // 404 if it doesn't exist
-    throw conflict("This automation was changed somewhere else. Reload to get the latest version.");
+    throw conflict("Эту автоматизацию изменили в другом месте. Обновите страницу, чтобы получить последнюю версию.");
   }
   return row.revision;
 }
@@ -204,7 +204,7 @@ export async function deleteAutomation(ctx: WorkspaceContext, id: string) {
   const row = await getOwned(ctx, id);
   const db = await getDb();
   await db.delete(automations).where(and(eq(automations.id, id), eq(automations.workspaceId, ctx.workspaceId)));
-  await recordActivity(ctx, { type: "automation.deleted", summary: `Automation “${row.name}” deleted`, entityType: "automation" });
+  await recordActivity(ctx, { type: "automation.deleted", summary: `Удалена автоматизация «${row.name}»`, entityType: "automation" });
 }
 
 /** Builds the reference context (agents, automations) for validating in this workspace. */
@@ -244,7 +244,7 @@ export async function activateAutomation(ctx: WorkspaceContext, id: string) {
   const result = validateGraph(row.graph, await referenceContext(ctx, id));
   if (!result.valid || !result.graph) {
     const count = result.issues.filter((i) => i.severity === "error").length;
-    throw new AppError(`Fix ${count} problem${count === 1 ? "" : "s"} in the flow before activating`, "validation");
+    throw new AppError(`Перед запуском исправьте ошибки в сценарии (${count})`, "validation");
   }
   const version = await snapshotVersion(ctx, id, result.graph, "publish");
   const db = await getDb();
@@ -254,7 +254,7 @@ export async function activateAutomation(ctx: WorkspaceContext, id: string) {
     .where(and(eq(automations.id, id), eq(automations.workspaceId, ctx.workspaceId)));
   await recordActivity(ctx, {
     type: "automation.activated",
-    summary: `Automation “${row.name}” activated (v${version.version})`,
+    summary: `Включена автоматизация «${row.name}» (v${version.version})`,
     entityType: "automation",
     entityId: id,
   });
@@ -271,7 +271,7 @@ export async function deactivateAutomation(ctx: WorkspaceContext, id: string) {
     .where(and(eq(automations.id, id), eq(automations.workspaceId, ctx.workspaceId)));
   await recordActivity(ctx, {
     type: "automation.deactivated",
-    summary: `Automation “${row.name}” deactivated`,
+    summary: `Выключена автоматизация «${row.name}»`,
     entityType: "automation",
     entityId: id,
   });

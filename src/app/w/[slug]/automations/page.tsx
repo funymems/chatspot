@@ -15,7 +15,7 @@ import { automationStatuses, listAutomations, type AutomationStatus } from "@/li
 import { listTemplates } from "@/lib/server/services/templates";
 import { AutomationFilters } from "./automation-filters";
 
-export const metadata: Metadata = { title: "Automations" };
+export const metadata: Metadata = { title: "Автоматизации" };
 
 type Props = PageProps<"/w/[slug]/automations">;
 
@@ -23,10 +23,10 @@ export default function AutomationsPage({ params, searchParams }: Props) {
   return (
     <PageContainer>
       <PageHeader
-        title="Automations"
-        description="Conversation flows that react to incoming messages and events."
+        title="Автоматизации"
+        description="Сценарии диалогов, которые реагируют на входящие сообщения и события."
         actions={
-          <Suspense fallback={<Button disabled>New automation</Button>}>
+          <Suspense fallback={<Button disabled>Новая автоматизация</Button>}>
             <NewAutomation params={params} />
           </Suspense>
         }
@@ -67,11 +67,11 @@ async function AutomationList({ params, searchParams }: Pick<Props, "params" | "
       return (
         <EmptyState
           icon={SearchX}
-          title="No automations match"
-          description="Try a different search term or status filter."
+          title="Ничего не найдено"
+          description="Попробуйте другой запрос или фильтр по статусу."
           action={
             <Button variant="outline" asChild>
-              <Link href={`/w/${slug}/automations`}>Clear filters</Link>
+              <Link href={`/w/${slug}/automations`}>Сбросить фильтры</Link>
             </Button>
           }
         />
@@ -81,13 +81,13 @@ async function AutomationList({ params, searchParams }: Pick<Props, "params" | "
     return (
       <EmptyState
         icon={Workflow}
-        title="Create your first automation"
-        description="Automations reply to messages, tag contacts and capture leads. Start from scratch or use a proven template."
+        title="Создайте первую автоматизацию"
+        description="Автоматизации отвечают на сообщения, присваивают контактам теги и собирают лиды. Начните с нуля или возьмите проверенный шаблон."
         action={
           <div className="flex flex-wrap justify-center gap-2">
             <NewAutomationButton slug={slug} templates={templates} />
             <NewAutomationButton slug={slug} templates={templates} initialMode="template" variant="outline">
-              Browse templates
+              Смотреть шаблоны
             </NewAutomationButton>
           </div>
         }
@@ -100,13 +100,13 @@ async function AutomationList({ params, searchParams }: Pick<Props, "params" | "
       <table className="w-full text-sm">
         <thead className="border-b bg-muted/40 text-left text-xs text-muted-foreground">
           <tr>
-            <th className="px-4 py-2.5 font-medium">Name</th>
-            <th className="hidden px-4 py-2.5 font-medium md:table-cell">Trigger</th>
-            <th className="px-4 py-2.5 font-medium">Status</th>
-            <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">Runs</th>
-            <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Last modified</th>
+            <th className="px-4 py-2.5 font-medium">Название</th>
+            <th className="hidden px-4 py-2.5 font-medium md:table-cell">Триггер</th>
+            <th className="px-4 py-2.5 font-medium">Статус</th>
+            <th className="hidden px-4 py-2.5 text-right font-medium sm:table-cell">Запуски</th>
+            <th className="hidden px-4 py-2.5 font-medium lg:table-cell">Изменена</th>
             <th className="w-12 px-2 py-2.5">
-              <span className="sr-only">Actions</span>
+              <span className="sr-only">Действия</span>
             </th>
           </tr>
         </thead>
@@ -120,7 +120,7 @@ async function AutomationList({ params, searchParams }: Pick<Props, "params" | "
                 >
                   {a.name}
                 </Link>
-                <p className="truncate text-xs text-muted-foreground">{a.description || "No description"}</p>
+                <p className="truncate text-xs text-muted-foreground">{a.description || "Без описания"}</p>
               </td>
               <td className="hidden px-4 py-3 text-muted-foreground md:table-cell">
                 {a.triggerType ? triggerLabels[a.triggerType] ?? a.triggerType : "—"}
@@ -130,14 +130,14 @@ async function AutomationList({ params, searchParams }: Pick<Props, "params" | "
                   <AutomationStatusBadge status={a.status} />
                   {a.hasUnpublishedChanges && (
                     <span className="inline-flex items-center gap-1 text-[11px] text-amber-700">
-                      <AlertTriangle className="size-3" aria-hidden /> Unpublished changes
+                      <AlertTriangle className="size-3" aria-hidden /> Есть неопубликованные изменения
                     </span>
                   )}
                 </div>
               </td>
               <td className="hidden px-4 py-3 text-right tabular-nums sm:table-cell">
                 {a.runs}
-                {a.failedRuns > 0 && <span className="ml-1 text-xs text-destructive">({a.failedRuns} failed)</span>}
+                {a.failedRuns > 0 && <span className="ml-1 text-xs text-destructive">(с ошибкой: {a.failedRuns})</span>}
               </td>
               <td className="hidden px-4 py-3 text-muted-foreground lg:table-cell">
                 <RelativeTime date={a.updatedAt} />
@@ -155,7 +155,7 @@ async function AutomationList({ params, searchParams }: Pick<Props, "params" | "
 
 function ListSkeleton() {
   return (
-    <div className="space-y-2" role="status" aria-label="Loading automations">
+    <div className="space-y-2" role="status" aria-label="Загрузка автоматизаций">
       {Array.from({ length: 5 }).map((_, i) => (
         <Skeleton key={i} className="h-14 w-full rounded-lg" />
       ))}

@@ -1,11 +1,11 @@
 export const templateCategories = {
-  lead_generation: "Lead generation",
-  faq_support: "FAQ & support",
-  product_recommendations: "Product recommendations",
-  course_sales: "Course sales",
-  booking: "Booking inquiries",
-  welcome: "Welcome sequence",
-  lead_qualification: "Lead qualification",
-  follow_up: "Follow-up sequence",
+  lead_generation: "Сбор лидов",
+  faq_support: "Вопросы и поддержка",
+  product_recommendations: "Подбор товаров",
+  course_sales: "Продажа курсов",
+  booking: "Запись и бронирование",
+  welcome: "Приветствие",
+  lead_qualification: "Квалификация лидов",
+  follow_up: "Повторные касания",
 } as const;
 export type TemplateCategory = keyof typeof templateCategories;

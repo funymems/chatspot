@@ -32,10 +32,10 @@ export async function createAutomationAction(slug: string, input: unknown): Prom
     } else {
       // AI drafts come back from the client: re-validate on the server and never activate.
       const v = validateGraph(data.graph);
-      if (!v.valid || !v.graph) throw new AppError("The generated flow is not valid. Generate it again or adjust the description.", "validation");
+      if (!v.valid || !v.graph) throw new AppError("Сгенерированный сценарий содержит ошибки. Сгенерируйте его заново или уточните описание.", "validation");
       row = await createAutomation(ctx, { name: data.name, description: data.description, graph: v.graph, origin: "ai" });
     }
-    return { ok: true, data: { id: row.id }, message: `“${row.name}” created as a draft` };
+    return { ok: true, data: { id: row.id }, message: `«${row.name}» создана как черновик` };
   });
 }
 
@@ -45,7 +45,7 @@ export async function updateAutomationDetailsAction(slug: string, id: string, in
     const data = parseInput(automationDetailsSchema, input);
     await updateAutomationDetails(ctx, idSchema.parse(id), data);
     refresh();
-    return { ok: true, data: null, message: "Details saved" };
+    return { ok: true, data: null, message: "Данные сохранены" };
   });
 }
 
@@ -54,7 +54,7 @@ export async function duplicateAutomationAction(slug: string, id: string): Promi
     const ctx = await authorizeWorkspace(slug);
     const copy = await duplicateAutomation(ctx, idSchema.parse(id));
     refresh();
-    return { ok: true, data: { id: copy.id }, message: `Duplicated as “${copy.name}”` };
+    return { ok: true, data: { id: copy.id }, message: `Создана копия «${copy.name}»` };
   });
 }
 
@@ -63,7 +63,7 @@ export async function deleteAutomationAction(slug: string, id: string): Promise<
     const ctx = await authorizeWorkspace(slug);
     await deleteAutomation(ctx, idSchema.parse(id));
     refresh();
-    return { ok: true, data: null, message: "Automation deleted" };
+    return { ok: true, data: null, message: "Автоматизация удалена" };
   });
 }
 
@@ -74,10 +74,10 @@ export async function setAutomationActiveAction(slug: string, id: string, active
     let message: string;
     if (active) {
       const version = await activateAutomation(ctx, automationId);
-      message = `Activated · version ${version.version} is live`;
+      message = `Включена · работает версия ${version.version}`;
     } else {
       await deactivateAutomation(ctx, automationId);
-      message = "Automation deactivated";
+      message = "Автоматизация выключена";
     }
     refresh();
     return { ok: true, data: null, message };
@@ -101,7 +101,7 @@ export async function saveAutomationGraphAction(
     return {
       ok: true,
       data: { revision: newRevision, status: a.status, hasUnpublishedChanges: a.hasUnpublishedChanges, publishedVersion: a.published?.version ?? null },
-      message: "Changes saved",
+      message: "Изменения сохранены",
     };
   });
 }

@@ -92,10 +92,10 @@ export type StartParams = {
 export async function startExecution(p: StartParams): Promise<Execution> {
   const db = await getDb();
   const [version] = await db.select().from(automationVersions).where(eq(automationVersions.id, p.versionId)).limit(1);
-  if (!version || version.workspaceId !== p.workspaceId) throw new Error("Automation version not found");
+  if (!version || version.workspaceId !== p.workspaceId) throw new Error("Версия автоматизации не найдена");
   const graph = automationGraph.parse(version.graph);
   const trigger = graph.nodes.find((n) => n.type === "trigger");
-  if (!trigger) throw new Error("Flow has no trigger");
+  if (!trigger) throw new Error("В сценарии нет триггера");
 
   const [exec] = await db
     .insert(automationExecutions)
@@ -134,8 +134,8 @@ export async function retryExecution(workspaceId: string, executionId: string): 
     .from(automationExecutions)
     .where(and(eq(automationExecutions.id, executionId), eq(automationExecutions.workspaceId, workspaceId)))
     .limit(1);
-  if (!old) throw new Error("Execution not found");
-  if (old.status !== "failed") throw new Error("Only failed runs can be retried");
+  if (!old) throw new Error("Запуск не найден");
+  if (old.status !== "failed") throw new Error("Повторить можно только запуск с ошибкой");
   return startExecution({
     workspaceId,
     automationId: old.automationId,
@@ -153,7 +153,7 @@ export async function retryExecution(workspaceId: string, executionId: string): 
 async function runLocked(executionId: string, resume?: ResumeInput): Promise<Execution> {
   const db = await getDb();
   const [exec] = await db.select().from(automationExecutions).where(eq(automationExecutions.id, executionId)).limit(1);
-  if (!exec) throw new Error("Execution not found");
+  if (!exec) throw new Error("Запуск не найден");
   if (exec.status !== "queued" && exec.status !== "waiting") return exec; // already finished
 
   const state = structuredClone(exec.state as ExecState);
@@ -175,9 +175,9 @@ async function runLocked(executionId: string, resume?: ResumeInput): Promise<Exe
 
   while (state.cursor) {
     const node = graph.nodes.find((n) => n.id === state.cursor);
-    if (!node) return fail(exec, state, stepCount, `Node ${state.cursor} no longer exists in this version`, state.cursor);
+    if (!node) return fail(exec, state, stepCount, `Блока ${state.cursor} больше нет в этой версии`, state.cursor);
     if (stepCount >= maxSteps) {
-      return fail(exec, state, stepCount, `Stopped after ${maxSteps} steps — the flow is probably looping`, node.id);
+      return fail(exec, state, stepCount, `Остановлено после ${maxSteps} шагов — вероятно, сценарий зациклился`, node.id);
     }
 
     const started = new Date();
@@ -231,7 +231,7 @@ async function runLocked(executionId: string, resume?: ResumeInput): Promise<Exe
     const handle = result.handle ?? "out";
     await insertLog(exec, state, node, { status: "success", startedAt: started, durationMs, branch: handle === "out" ? null : handle, input: result.input, output: result.output });
     const next = nextNode(graph, node.id, handle);
-    if (!next) return fail(exec, state, stepCount, `${node.type} node has no connection for its “${handle}” output`, node.id);
+    if (!next) return fail(exec, state, stepCount, `У блока «${node.type}» не подключён выход «${handle}»`, node.id);
     state.cursor = next;
     await saveExec(exec.id, { state, stepCount, currentNodeId: next });
   }
@@ -304,11 +304,11 @@ async function executeNode(exec: Execution, graph: AutomationGraph, node: GraphN
       return aiStep(exec, node, node.data as AiResponseConfig, state);
     case "end": {
       const d = node.data as EndConfig;
-      if (d.outcome === "handoff") await handoff(exec, "Flow ended with a hand-off to a human");
+      if (d.outcome === "handoff") await handoff(exec, "Сценарий завершился передачей диалога человеку");
       return { kind: "end", outcome: d.outcome, label: d.label, output: { outcome: d.outcome, label: d.label } };
     }
     case "note":
-      throw new Error("Notes are annotations and can't be executed");
+      throw new Error("Заметки — это комментарии, их нельзя выполнить");
   }
 }
 
@@ -318,10 +318,10 @@ async function messageStep(exec: Execution, node: GraphNode, d: MessageConfig, s
     return { kind: "pause", wait: { kind: "delay", nodeId: node.id, phase: "before_send" }, runAt, output: { delayedUntil: runAt.toISOString() } };
   }
   state.delayDone = state.delayDone.filter((id) => id !== node.id); // loops re-apply the delay
-  if (!exec.conversationId) throw new Error("No conversation to send the message to");
+  if (!exec.conversationId) throw new Error("Нет диалога, в который можно отправить сообщение");
   const db = await getDb();
   const [conv] = await db.select().from(conversations).where(eq(conversations.id, exec.conversationId)).limit(1);
-  if (!conv) throw new Error("Conversation not found");
+  if (!conv) throw new Error("Диалог не найден");
   const provider = getChannelProvider(conv.channel);
   const scope = await scopeFor(exec, state);
   const sent = [];
@@ -336,7 +336,7 @@ async function messageStep(exec: Execution, node: GraphNode, d: MessageConfig, s
         linkButtons: last ? d.linkButtons.map((b) => ({ ...b, label: renderTemplate(b.label, scope) })) : undefined,
       },
     );
-    if (res.status === "failed") throw new RetryableError(res.error ?? "Channel failed to deliver the message");
+    if (res.status === "failed") throw new RetryableError(res.error ?? "Канал не смог доставить сообщение");
     sent.push({ text, status: res.status });
   }
   if (d.waitForReply) {
@@ -349,7 +349,7 @@ async function messageStep(exec: Execution, node: GraphNode, d: MessageConfig, s
 async function actionStep(exec: Execution, node: GraphNode, a: ActionDef, state: ExecState): Promise<StepResult> {
   const ws = exec.workspaceId;
   const needContact = () => {
-    if (!exec.contactId) throw new Error("This action needs a contact, but the run has none");
+    if (!exec.contactId) throw new Error("Для этого действия нужен контакт, но у запуска его нет");
     return exec.contactId;
   };
   const scope = () => scopeFor(exec, state);
@@ -384,7 +384,7 @@ async function actionStep(exec: Execution, node: GraphNode, a: ActionDef, state:
       return { kind: "pause", wait: { kind: "delay", nodeId: node.id, phase: "after" }, runAt, output: { resumeAt: runAt.toISOString() } };
     }
     case "redirect": {
-      if (state.redirectDepth >= MAX_REDIRECT_DEPTH) throw new Error(`Redirect limit (${MAX_REDIRECT_DEPTH}) reached — flows are redirecting in a loop`);
+      if (state.redirectDepth >= MAX_REDIRECT_DEPTH) throw new Error(`Достигнут лимит переходов (${MAX_REDIRECT_DEPTH}) — сценарии переходят друг в друга по кругу`);
       const target = await redirectVersion(ws, a.automationId, exec.mode);
       const child = await startExecution({
         workspaceId: ws,
@@ -397,7 +397,7 @@ async function actionStep(exec: Execution, node: GraphNode, a: ActionDef, state:
         redirectDepth: state.redirectDepth + 1,
         vars: { ...state.vars },
       });
-      return { kind: "end", outcome: "redirected", label: `Redirected to “${target.name}”`, output: { childExecutionId: child.id, childStatus: child.status } };
+      return { kind: "end", outcome: "redirected", label: `Переход в «${target.name}»`, output: { childExecutionId: child.id, childStatus: child.status } };
     }
     case "log_event": {
       const s = await scope();
@@ -406,7 +406,7 @@ async function actionStep(exec: Execution, node: GraphNode, a: ActionDef, state:
       await db.insert(activityEvents).values({
         workspaceId: ws,
         type: "flow.event",
-        summary: `Flow event “${a.eventName}”${note ? `: ${note}` : ""}`.slice(0, 300),
+        summary: `Событие сценария «${a.eventName}»${note ? `: ${note}` : ""}`.slice(0, 300),
         entityType: "execution",
         entityId: exec.id,
         metadata: { eventName: a.eventName, note, automationId: exec.automationId, mode: exec.mode },
@@ -426,11 +426,11 @@ async function redirectVersion(workspaceId: string, automationId: string, mode: 
     .from(automations)
     .where(and(eq(automations.id, automationId), eq(automations.workspaceId, workspaceId)))
     .limit(1);
-  if (!target) throw new Error("The redirect target automation no longer exists");
+  if (!target) throw new Error("Автоматизации, в которую ведёт переход, больше нет");
   if (target.publishedVersionId && (mode === "live" ? target.status === "active" : true)) {
     return { versionId: target.publishedVersionId, name: target.name };
   }
-  if (mode === "live") throw new Error(`Redirect target “${target.name}” is not active`);
+  if (mode === "live") throw new Error(`Автоматизация «${target.name}» для перехода не включена`);
   // Test runs may redirect into an unpublished draft: snapshot it.
   const { snapshotDraftForTest } = await import("./snapshots");
   const versionId = await snapshotDraftForTest(workspaceId, target);
@@ -441,7 +441,7 @@ async function aiStep(exec: Execution, node: GraphNode, d: AiResponseConfig, sta
   const scope = await scopeFor(exec, state);
   const res = await runAiStep({ execution: exec, config: d, scope });
   if (d.saveReplyAs && res.reply) state.vars[d.saveReplyAs] = res.reply;
-  if (res.handoff) await handoff(exec, res.handoffReason ?? "AI agent requested a human");
+  if (res.handoff) await handoff(exec, res.handoffReason ?? "ИИ-агент попросил подключить человека");
   return { kind: "next", input: { message: scope.message }, output: res };
 }
 
@@ -452,7 +452,7 @@ async function handoff(exec: Execution, reason: string) {
   await db.insert(notifications).values({
     workspaceId: exec.workspaceId,
     type: "handoff",
-    title: exec.mode === "test" ? "Test conversation needs a human" : "Conversation needs a human",
+    title: exec.mode === "test" ? "Тестовому диалогу нужен человек" : "Диалогу нужен человек",
     body: reason,
     link: `/conversations?c=${exec.conversationId}`,
   });

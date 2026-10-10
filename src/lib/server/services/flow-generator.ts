@@ -105,7 +105,7 @@ export async function generateFlow(ctx: WorkspaceContext, description: string): 
     }
     const { graph, fixes } = repairDraft(draft);
     const v = validateGraph(graph, refCtx);
-    last = { name: draft.name.slice(0, 120) || "Generated automation", description: draft.description.slice(0, 500), graph: v.graph ?? graph, issues: v.issues, valid: v.valid, fixes, provider: `gemini:${provider.model}` };
+    last = { name: draft.name.slice(0, 120) || "Сгенерированная автоматизация", description: draft.description.slice(0, 500), graph: v.graph ?? graph, issues: v.issues, valid: v.valid, fixes, provider: `gemini:${provider.model}` };
     if (v.valid) return last;
     // One repair round: send the validator's findings back to the model.
     conversation.push(
@@ -114,5 +114,5 @@ export async function generateFlow(ctx: WorkspaceContext, description: string): 
     );
   }
   if (last) return last;
-  throw new Error("The AI couldn't produce a usable flow. Try describing it in more detail.");
+  throw new Error("ИИ не смог собрать рабочий сценарий. Попробуйте описать его подробнее.");
 }

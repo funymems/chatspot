@@ -72,7 +72,7 @@ export async function sendAgentTestMessage(ctx: WorkspaceContext, agentId: strin
       workspaceId: ctx.workspaceId,
       userId: ctx.userId,
       type: "handoff",
-      title: `Test chat with “${agent.name}” needs a human`,
+      title: `Тестовому чату с «${agent.name}» нужен человек`,
       body: res.handoffReason ?? "",
       link: `/agents/${agent.id}?tab=testing`,
     });

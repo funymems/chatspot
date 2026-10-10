@@ -1,4 +1,5 @@
 import { z } from "zod";
+import "@/lib/validation/locale";
 
 /**
  * Automation graph format (schema version 1).
@@ -13,15 +14,15 @@ export const GRAPH_SCHEMA_VERSION = 1;
 const id = z.string().min(1).max(64);
 const shortText = (max = 200) => z.string().trim().max(max);
 const list = <T extends z.ZodType>(item: T, max = 50) => z.array(item).max(max);
-const keyword = z.string().trim().min(1, "Keyword can't be empty").max(100);
+const keyword = z.string().trim().min(1, "Ключевое слово не может быть пустым").max(100);
 
 /** Variable / field names used in {{...}} templates and contact fields. */
 export const fieldName = z
   .string()
   .trim()
-  .min(1, "Field name is required")
+  .min(1, "Укажите название поля")
   .max(64)
-  .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, "Use letters, numbers and underscores (e.g. course_interest)");
+  .regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/, "Используйте латинские буквы, цифры и подчёркивания (например, course_interest)");
 
 // ─── Trigger ────────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ export const triggerConfig = z.object({
   /** keyword: any of these words appears as a whole word. */
   keywords: list(keyword).default([]),
   /** phrase: message matches a phrase per `phraseMatch`. */
-  phrases: list(shortText(300).min(1, "Phrase can't be empty")).default([]),
+  phrases: list(shortText(300).min(1, "Фраза не может быть пустой")).default([]),
   phraseMatch: z.enum(["exact", "contains", "starts_with"]).default("contains"),
   caseSensitive: z.boolean().default(false),
   /** webhook: generic event name for future integrations. */
@@ -46,13 +47,13 @@ export type TriggerConfig = z.infer<typeof triggerConfig>;
 // ─── Message ────────────────────────────────────────────────────────────────
 
 export const messageConfig = z.object({
-  messages: list(z.object({ id, text: shortText(2000) }), 10).min(1, "Add at least one message"),
-  quickReplies: list(z.object({ id, label: shortText(40).min(1, "Button label is required") }), 10).default([]),
+  messages: list(z.object({ id, text: shortText(2000) }), 10).min(1, "Добавьте хотя бы одно сообщение"),
+  quickReplies: list(z.object({ id, label: shortText(40).min(1, "Укажите текст кнопки") }), 10).default([]),
   linkButtons: list(
     z.object({
       id,
-      label: shortText(40).min(1, "Button label is required"),
-      url: z.url({ protocol: /^https?$/, error: "Enter a valid http(s) URL" }),
+      label: shortText(40).min(1, "Укажите текст кнопки"),
+      url: z.url({ protocol: /^https?$/, error: "Введите корректную ссылку http(s)" }),
     }),
     3,
   ).default([]),
@@ -72,15 +73,15 @@ export const compareOperators = ["equals", "not_equals", "contains", "is_empty",
 export type CompareOperator = (typeof compareOperators)[number];
 
 export const conditionRule = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("message_contains"), keywords: list(keyword).min(1, "Add at least one keyword"), caseSensitive: z.boolean().default(false) }),
+  z.object({ kind: z.literal("message_contains"), keywords: list(keyword).min(1, "Добавьте хотя бы одно ключевое слово"), caseSensitive: z.boolean().default(false) }),
   z.object({ kind: z.literal("variable"), variable: fieldName, operator: z.enum(compareOperators), value: shortText(500).default("") }),
-  z.object({ kind: z.literal("has_tag"), tag: shortText(50).min(1, "Choose a tag") }),
+  z.object({ kind: z.literal("has_tag"), tag: shortText(50).min(1, "Укажите тег") }),
   z.object({ kind: z.literal("contact_field"), field: fieldName, operator: z.enum(compareOperators), value: shortText(500).default("") }),
 ]);
 export type ConditionRule = z.infer<typeof conditionRule>;
 
 export const conditionConfig = z.object({
-  rules: list(conditionRule, 10).min(1, "Add at least one rule"),
+  rules: list(conditionRule, 10).min(1, "Добавьте хотя бы одно правило"),
   combinator: z.enum(["all", "any"]).default("all"),
 });
 export type ConditionConfig = z.infer<typeof conditionConfig>;
@@ -88,8 +89,8 @@ export type ConditionConfig = z.infer<typeof conditionConfig>;
 // ─── Action ─────────────────────────────────────────────────────────────────
 
 export const actionDef = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("add_tag"), tag: shortText(50).min(1, "Tag is required") }),
-  z.object({ kind: z.literal("remove_tag"), tag: shortText(50).min(1, "Tag is required") }),
+  z.object({ kind: z.literal("add_tag"), tag: shortText(50).min(1, "Укажите тег") }),
+  z.object({ kind: z.literal("remove_tag"), tag: shortText(50).min(1, "Укажите тег") }),
   z.object({ kind: z.literal("set_field"), field: fieldName, value: shortText(500) }),
   z.object({
     kind: z.literal("capture"),
@@ -98,9 +99,9 @@ export const actionDef = z.discriminatedUnion("kind", [
     source: z.enum(["last_message", "variable"]).default("last_message"),
     variable: fieldName.or(z.literal("")).default(""),
   }),
-  z.object({ kind: z.literal("wait"), seconds: z.number().int().min(1, "Wait at least 1 second").max(30 * 24 * 3600) }),
-  z.object({ kind: z.literal("redirect"), automationId: z.uuid("Choose an automation") }),
-  z.object({ kind: z.literal("log_event"), eventName: shortText(100).min(1, "Event name is required"), note: shortText(500).default("") }),
+  z.object({ kind: z.literal("wait"), seconds: z.number().int().min(1, "Пауза — не меньше 1 секунды").max(30 * 24 * 3600) }),
+  z.object({ kind: z.literal("redirect"), automationId: z.uuid("Выберите автоматизацию") }),
+  z.object({ kind: z.literal("log_event"), eventName: shortText(100).min(1, "Укажите название события"), note: shortText(500).default("") }),
   z.object({ kind: z.literal("mark_qualified") }),
 ]);
 export type ActionDef = z.infer<typeof actionDef>;
@@ -110,7 +111,7 @@ export type ActionConfig = z.infer<typeof actionConfig>;
 // ─── AI response ────────────────────────────────────────────────────────────
 
 export const aiResponseConfig = z.object({
-  agentId: z.uuid("Choose an AI agent"),
+  agentId: z.uuid("Выберите ИИ-агента"),
   instructions: shortText(2000).default(""),
   /** Extra context appended to retrieval (e.g. "Only discuss the beginner course"). */
   knowledgeContext: shortText(2000).default(""),
@@ -188,7 +189,7 @@ export const graphSettings = z.object({
 
 export const automationGraph = z.object({
   schemaVersion: z.literal(GRAPH_SCHEMA_VERSION).default(GRAPH_SCHEMA_VERSION),
-  nodes: z.array(graphNode).max(200, "A flow can have at most 200 nodes"),
+  nodes: z.array(graphNode).max(200, "В сценарии может быть не более 200 блоков"),
   edges: z.array(graphEdge).max(400),
   settings: graphSettings.default({ maxSteps: 100 }),
 });

@@ -36,7 +36,7 @@ export async function resolveWorkspaceAccess(userId: string, slug: string): Prom
 }
 
 export function assertRole(ctx: WorkspaceContext, min: Role) {
-  if (!hasRole(ctx.role, min)) throw forbidden(`This action requires the ${min} role`);
+  if (!hasRole(ctx.role, min)) throw forbidden(`Для этого действия нужна роль «${({ owner: "владелец", admin: "администратор", member: "участник" } as Record<string, string>)[min] ?? min}»`);
 }
 
 export async function listWorkspacesForUser(userId: string): Promise<WorkspaceSummary[]> {
@@ -65,11 +65,11 @@ export async function createWorkspace(
       .insert(workspaces)
       .values({ name, slug: slugify(name), createdBy: userId, isDemo: opts.isDemo ?? false })
       .returning();
-    if (!ws) throw new Error("Failed to create workspace");
+    if (!ws) throw new Error("Не удалось создать рабочее пространство");
     await tx.insert(workspaceMembers).values({ workspaceId: ws.id, userId, role: "owner" });
     await recordActivity(
       { workspaceId: ws.id, userId },
-      { type: "workspace.created", summary: `Workspace “${name}” created`, entityType: "workspace", entityId: ws.id },
+      { type: "workspace.created", summary: `Создано рабочее пространство «${name}»`, entityType: "workspace", entityId: ws.id },
       tx,
     );
     return { id: ws.id, name: ws.name, slug: ws.slug, role: "owner" as const, isDemo: ws.isDemo };
@@ -83,7 +83,7 @@ export async function renameWorkspace(ctx: WorkspaceContext, name: string) {
   assertRole(ctx, "admin");
   const db = await getDb();
   await db.update(workspaces).set({ name, updatedAt: new Date() }).where(eq(workspaces.id, ctx.workspaceId));
-  await recordActivity(ctx, { type: "workspace.renamed", summary: `Workspace renamed to “${name}”` });
+  await recordActivity(ctx, { type: "workspace.renamed", summary: `Рабочее пространство переименовано в «${name}»` });
 }
 
 export async function listMembers(ctx: WorkspaceContext) {

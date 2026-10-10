@@ -31,7 +31,7 @@ async function call(url: string, init: RequestInit, label: string): Promise<unkn
   try {
     res = await fetch(url, { ...init, signal: AbortSignal.timeout(15_000) });
   } catch {
-    throw new InstagramApiError(`${label}: could not reach Instagram`, 0, "server");
+    throw new InstagramApiError(`${label}: не удалось связаться с Instagram`, 0, "server");
   }
   const text = await res.text();
   let body: unknown = null;
@@ -44,7 +44,7 @@ async function call(url: string, init: RequestInit, label: string): Promise<unkn
     const err = body as { error_message?: string; error?: { message?: string; type?: string; code?: number } } | null;
     const msg = err?.error_message ?? err?.error?.message ?? `HTTP ${res.status}`;
     const kind = res.status === 429 ? "rate_limit" : res.status >= 500 ? "server" : res.status === 400 || res.status === 401 || res.status === 403 ? "auth" : "request";
-    throw new InstagramApiError(`${label} failed: ${msg.slice(0, 200)}`, res.status, kind);
+    throw new InstagramApiError(`${label}: ошибка — ${msg.slice(0, 200)}`, res.status, kind);
   }
   return body;
 }
@@ -77,47 +77,47 @@ export async function exchangeCode(cfg: InstagramConfig, code: string) {
     redirect_uri: cfg.redirectUri,
     code,
   });
-  const raw = await call(IG_TOKEN_URL, { method: "POST", body, headers: { "content-type": "application/x-www-form-urlencoded" } }, "Code exchange");
+  const raw = await call(IG_TOKEN_URL, { method: "POST", body, headers: { "content-type": "application/x-www-form-urlencoded" } }, "Обмен кода на токен");
   // Documented shape is { data: [...] }; accept the flat legacy shape too.
   const nested = shortLivedSchema.safeParse(raw);
   const flat = flatShortLivedSchema.safeParse(raw);
   const t = nested.success ? nested.data.data[0]! : flat.success ? flat.data : null;
-  if (!t) throw new InstagramApiError("Code exchange returned an unexpected response", 502, "bad_response");
+  if (!t) throw new InstagramApiError("Обмен кода на токен: Instagram вернул неожиданный ответ", 502, "bad_response");
   return { accessToken: t.access_token, userId: t.user_id, scopes: scopesOf(t.permissions) };
 }
 
 /** Step 2: short-lived → long-lived token (60 days). Server-side only. */
 export async function exchangeLongLived(cfg: InstagramConfig, shortLivedToken: string) {
   const url = `${IG_GRAPH_BASE}/access_token?${new URLSearchParams({ grant_type: "ig_exchange_token", client_secret: cfg.appSecret, access_token: shortLivedToken })}`;
-  const parsed = longLivedSchema.safeParse(await call(url, { method: "GET" }, "Long-lived token exchange"));
-  if (!parsed.success) throw new InstagramApiError("Long-lived token exchange returned an unexpected response", 502, "bad_response");
+  const parsed = longLivedSchema.safeParse(await call(url, { method: "GET" }, "Получение долгосрочного токена"));
+  if (!parsed.success) throw new InstagramApiError("Получение долгосрочного токена: Instagram вернул неожиданный ответ", 502, "bad_response");
   return { accessToken: parsed.data.access_token, expiresAt: new Date(Date.now() + parsed.data.expires_in * 1000) };
 }
 
 /** Refresh a long-lived token (must be ≥24h old and not expired). */
 export async function refreshLongLived(token: string) {
   const url = `${IG_GRAPH_BASE}/refresh_access_token?${new URLSearchParams({ grant_type: "ig_refresh_token", access_token: token })}`;
-  const parsed = longLivedSchema.safeParse(await call(url, { method: "GET" }, "Token refresh"));
-  if (!parsed.success) throw new InstagramApiError("Token refresh returned an unexpected response", 502, "bad_response");
+  const parsed = longLivedSchema.safeParse(await call(url, { method: "GET" }, "Продление токена"));
+  if (!parsed.success) throw new InstagramApiError("Продление токена: Instagram вернул неожиданный ответ", 502, "bad_response");
   return { accessToken: parsed.data.access_token, expiresAt: new Date(Date.now() + parsed.data.expires_in * 1000) };
 }
 
 /** Profile of the connected professional account. */
 export async function getProfile(cfg: InstagramConfig, token: string) {
   const url = `${IG_GRAPH_BASE}/${cfg.graphVersion}/me?${new URLSearchParams({ fields: "user_id,username", access_token: token })}`;
-  const parsed = profileSchema.safeParse(await call(url, { method: "GET" }, "Profile lookup"));
-  if (!parsed.success) throw new InstagramApiError("Profile lookup returned an unexpected response", 502, "bad_response");
+  const parsed = profileSchema.safeParse(await call(url, { method: "GET" }, "Запрос профиля"));
+  if (!parsed.success) throw new InstagramApiError("Запрос профиля: Instagram вернул неожиданный ответ", 502, "bad_response");
   // `user_id` is the professional account id that webhooks use as entry[].id.
   const accountId = parsed.data.user_id ?? parsed.data.id;
-  if (!accountId) throw new InstagramApiError("Profile lookup returned no account id", 502, "bad_response");
+  if (!accountId) throw new InstagramApiError("Запрос профиля: Instagram не вернул ID аккаунта", 502, "bad_response");
   return { accountId, appScopedId: parsed.data.id ?? null, username: parsed.data.username };
 }
 
 /** Subscribe the app to this account's webhook fields. */
 export async function subscribeWebhooks(cfg: InstagramConfig, token: string, fields: readonly string[]) {
   const url = `${IG_GRAPH_BASE}/${cfg.graphVersion}/me/subscribed_apps?${new URLSearchParams({ subscribed_fields: fields.join(","), access_token: token })}`;
-  const body = (await call(url, { method: "POST" }, "Webhook subscription")) as { success?: boolean } | null;
-  if (!body?.success) throw new InstagramApiError("Webhook subscription was not confirmed by Meta", 502, "bad_response");
+  const body = (await call(url, { method: "POST" }, "Подписка на вебхуки")) as { success?: boolean } | null;
+  if (!body?.success) throw new InstagramApiError("Meta не подтвердила подписку на вебхуки", 502, "bad_response");
 }
 
 export const graphVersion = () => process.env.INSTAGRAM_GRAPH_VERSION?.trim() || "v25.0";
@@ -147,10 +147,10 @@ export async function sendInstagramMessage(token: string, recipientIgsid: string
       headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
       body: JSON.stringify({ recipient: { id: recipientIgsid }, message }),
     },
-    "Send message",
+    "Отправка сообщения",
   );
   const parsed = z.object({ message_id: z.string() }).loose().safeParse(body);
-  if (!parsed.success) throw new InstagramApiError("Send message returned an unexpected response", 502, "bad_response");
+  if (!parsed.success) throw new InstagramApiError("Отправка сообщения: Instagram вернул неожиданный ответ", 502, "bad_response");
   return { messageId: parsed.data.message_id };
 }
 
@@ -192,8 +192,8 @@ export async function listRecentMessages(token: string, perThread = 5): Promise<
     limit: "20",
     access_token: token,
   })}`;
-  const parsed = conversationsSchema.safeParse(await call(url, { method: "GET" }, "Conversations lookup"));
-  if (!parsed.success) throw new InstagramApiError("Conversations lookup returned an unexpected response", 502, "bad_response");
+  const parsed = conversationsSchema.safeParse(await call(url, { method: "GET" }, "Загрузка переписок"));
+  if (!parsed.success) throw new InstagramApiError("Загрузка переписок: Instagram вернул неожиданный ответ", 502, "bad_response");
   return parsed.data.data.map((c) =>
     (c.messages?.data ?? [])
       .filter((m) => m.from?.id)
@@ -210,7 +210,7 @@ export async function listRecentMessages(token: string, perThread = 5): Promise<
 /** User Profile API: available once the user has messaged the account. */
 export async function getMessagingUserProfile(token: string, igsid: string): Promise<{ name: string; username: string }> {
   const url = `${IG_GRAPH_BASE}/${graphVersion()}/${encodeURIComponent(igsid)}?${new URLSearchParams({ fields: "name,username", access_token: token })}`;
-  const parsed = z.object({ name: z.string().optional(), username: z.string().optional() }).loose().safeParse(await call(url, { method: "GET" }, "Profile lookup"));
-  if (!parsed.success) throw new InstagramApiError("Profile lookup returned an unexpected response", 502, "bad_response");
+  const parsed = z.object({ name: z.string().optional(), username: z.string().optional() }).loose().safeParse(await call(url, { method: "GET" }, "Запрос профиля"));
+  if (!parsed.success) throw new InstagramApiError("Запрос профиля: Instagram вернул неожиданный ответ", 502, "bad_response");
   return { name: parsed.data.name ?? "", username: parsed.data.username ?? "" };
 }

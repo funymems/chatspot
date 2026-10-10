@@ -36,7 +36,7 @@ export function FlowPreview({
           fitViewOptions={{ padding: 0.2 }}
           minZoom={0.2}
           proOptions={{ hideAttribution: true }}
-          aria-label="Flow preview"
+          aria-label="Предпросмотр сценария"
         >
           <Background gap={20} size={1} />
           <Controls showInteractive={false} />

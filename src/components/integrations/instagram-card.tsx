@@ -44,17 +44,29 @@ export type InstagramCardProps = {
 };
 
 const outcomeText: Record<string, { label: string; tone: "ok" | "bad" | "warn"; help?: string }> = {
-  accepted: { label: "Accepted", tone: "ok", help: "Saved to Conversations (echoes of your own messages are ignored)." },
+  accepted: { label: "Принято", tone: "ok", help: "Сохранено в «Диалоги» (копии ваших собственных сообщений не учитываются)." },
   bad_signature: {
-    label: "Rejected: invalid signature",
+    label: "Отклонено: неверная подпись",
     tone: "bad",
-    help: "Meta signed with a secret the server doesn't have. Add META_APP_SECRET in Vercel (App settings → Basic → App secret) and redeploy.",
+    help: "Meta подписала запрос секретом, которого нет на сервере. Добавьте META_APP_SECRET в Vercel (Настройки приложения → Основное → Секрет приложения) и выполните повторный деплой.",
   },
-  unknown_account: { label: "Ignored: account not connected", tone: "warn", help: "The event is for an Instagram account ID that isn't connected to any workspace." },
-  not_configured: { label: "Rejected: server not configured", tone: "bad", help: "INSTAGRAM_APP_SECRET is missing on the server." },
-  invalid_json: { label: "Rejected: invalid JSON", tone: "bad" },
-  invalid_payload: { label: "Rejected: unexpected payload", tone: "bad" },
-  ignored_object: { label: "Ignored: not an Instagram event", tone: "warn" },
+  unknown_account: { label: "Пропущено: аккаунт не подключён", tone: "warn", help: "Событие относится к аккаунту Instagram, который не подключён ни к одному рабочему пространству." },
+  not_configured: { label: "Отклонено: сервер не настроен", tone: "bad", help: "На сервере не задан INSTAGRAM_APP_SECRET." },
+  invalid_json: { label: "Отклонено: некорректный JSON", tone: "bad" },
+  invalid_payload: { label: "Отклонено: неожиданный формат данных", tone: "bad" },
+  ignored_object: { label: "Пропущено: это не событие Instagram", tone: "warn" },
+};
+
+const kindText: Record<string, string> = {
+  message: "сообщение",
+  echo: "ваше сообщение",
+  deleted: "удаление",
+  postback: "нажатие кнопки",
+  reaction: "реакция",
+  read: "прочтение",
+  referral: "переход по ссылке",
+  comment: "комментарий",
+  unknown: "неизвестное событие",
 };
 
 function InstagramGlyph({ className }: { className?: string }) {
@@ -87,7 +99,7 @@ export function InstagramCard(p: InstagramCardProps) {
         <CardTitle className="flex items-center gap-2">
           <InstagramGlyph className="size-5 text-pink-600" /> Instagram
         </CardTitle>
-        <CardDescription>Connect a professional (Business or Creator) account to receive Direct messages in your inbox.</CardDescription>
+        <CardDescription>Подключите профессиональный аккаунт (бизнес или автор), чтобы получать сообщения из Direct во входящие.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
         {p.flash && (
@@ -108,25 +120,25 @@ export function InstagramCard(p: InstagramCardProps) {
         {c ? (
           <div className="space-y-3 rounded-lg border p-3">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="font-medium">@{c.username || "unknown"}</span>
+              <span className="font-medium">@{c.username || "неизвестно"}</span>
               <span
                 className={cn(
                   "rounded-full px-2 py-0.5 text-xs font-medium",
                   c.status === "active" ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
                 )}
               >
-                {c.status === "active" ? "Connected" : c.status === "token_expired" ? "Reconnect required" : c.status === "error" ? "Error" : "Disconnected"}
+                {c.status === "active" ? "Подключён" : c.status === "token_expired" ? "Нужно переподключить" : c.status === "error" ? "Ошибка" : "Отключён"}
               </span>
             </div>
             <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1 text-xs">
-              <dt className="text-muted-foreground">Access token</dt>
-              <dd>{c.tokenExpiresAt ? <>expires <RelativeTime date={c.tokenExpiresAt} /> (refreshed automatically)</> : "—"}</dd>
-              <dt className="text-muted-foreground">Permissions</dt>
+              <dt className="text-muted-foreground">Токен доступа</dt>
+              <dd>{c.tokenExpiresAt ? <>истекает <RelativeTime date={c.tokenExpiresAt} /> (продлевается автоматически)</> : "—"}</dd>
+              <dt className="text-muted-foreground">Разрешения</dt>
               <dd className="break-words">{c.grantedScopes.join(", ") || "—"}</dd>
-              <dt className="text-muted-foreground">Webhook subscription</dt>
-              <dd>{c.webhookSubscribedAt ? <>confirmed by Meta <RelativeTime date={c.webhookSubscribedAt} /></> : <span className="text-amber-700">not confirmed</span>}</dd>
-              <dt className="text-muted-foreground">Last event received</dt>
-              <dd>{c.lastWebhookAt ? <RelativeTime date={c.lastWebhookAt} /> : "none yet"}</dd>
+              <dt className="text-muted-foreground">Подписка на вебхуки</dt>
+              <dd>{c.webhookSubscribedAt ? <>подтверждена Meta <RelativeTime date={c.webhookSubscribedAt} /></> : <span className="text-amber-700">не подтверждена</span>}</dd>
+              <dt className="text-muted-foreground">Последнее событие</dt>
+              <dd>{c.lastWebhookAt ? <RelativeTime date={c.lastWebhookAt} /> : "пока не было"}</dd>
             </dl>
             {c.lastError && (
               <p className="flex items-start gap-2 rounded-md bg-destructive/5 p-2 text-xs text-destructive">
@@ -135,15 +147,15 @@ export function InstagramCard(p: InstagramCardProps) {
             )}
             <div className="flex items-start justify-between gap-3 rounded-md border bg-muted/30 p-2.5">
               <span className="text-xs">
-                <span className="block text-sm font-medium">Auto-replies</span>
+                <span className="block text-sm font-medium">Автоответы</span>
                 {c.autoReplyEnabled
-                  ? "On — active automations answer incoming DMs through Instagram (within Meta's 24-hour window)."
-                  : "Off — DMs arrive in Conversations only; nothing is sent automatically."}
+                  ? "Включены — активные автоматизации отвечают на входящие сообщения в Instagram (в пределах 24-часового окна Meta)."
+                  : "Выключены — сообщения попадают только в «Диалоги», автоматически ничего не отправляется."}
               </span>
               <Switch
                 checked={c.autoReplyEnabled}
                 disabled={!p.canManage || pending || c.status !== "active"}
-                aria-label="Instagram auto-replies"
+                aria-label="Автоответы в Instagram"
                 onCheckedChange={(v) =>
                   start(async () => {
                     const res = await setInstagramAutoReplyAction(p.slug, v);
@@ -155,12 +167,12 @@ export function InstagramCard(p: InstagramCardProps) {
             </div>
           </div>
         ) : (
-          <p className="text-sm text-muted-foreground">No Instagram account connected.</p>
+          <p className="text-sm text-muted-foreground">Аккаунт Instagram не подключён.</p>
         )}
 
         {!configured && (
           <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">
-            The server isn&apos;t configured for Instagram yet. Missing environment variables: <span className="font-mono">{p.missingConfig.join(", ")}</span>.
+            Сервер ещё не настроен для Instagram. Не заданы переменные окружения: <span className="font-mono">{p.missingConfig.join(", ")}</span>.
           </p>
         )}
 
@@ -168,13 +180,13 @@ export function InstagramCard(p: InstagramCardProps) {
           <div className="flex flex-wrap gap-2">
             <Button onClick={connect} disabled={pending || !configured}>
               {pending ? <Loader2 className="animate-spin" /> : <InstagramGlyph className="size-4" />}
-              {c ? (needsReconnect ? "Reconnect Instagram" : "Reconnect / change account") : "Connect Instagram"}
+              {c ? (needsReconnect ? "Переподключить Instagram" : "Переподключить / сменить аккаунт") : "Подключить Instagram"}
             </Button>
             {c && c.status === "active" && (
               <Button
                 variant="outline"
                 disabled={pending}
-                title="Fetch recent DMs directly from Instagram — works even when webhooks aren't delivered (e.g. unpublished Meta app)"
+                title="Загрузить последние сообщения напрямую из Instagram — работает, даже если вебхуки не приходят (например, приложение Meta не опубликовано)"
                 onClick={() =>
                   start(async () => {
                     const res = await pullInstagramMessagesAction(p.slug);
@@ -183,27 +195,27 @@ export function InstagramCard(p: InstagramCardProps) {
                   })
                 }
               >
-                <Inbox /> Check for new DMs
+                <Inbox /> Проверить новые сообщения
               </Button>
             )}
             {c && (
               <Button variant="outline" onClick={() => setConfirm(true)} disabled={pending}>
-                <Unplug /> Disconnect
+                <Unplug /> Отключить
               </Button>
             )}
           </div>
         ) : (
-          <p className="text-xs text-muted-foreground">Only workspace owners and admins can manage integrations.</p>
+          <p className="text-xs text-muted-foreground">Управлять интеграциями могут только владельцы и администраторы.</p>
         )}
 
         {p.diagnostics && c && (
           <details className="rounded-lg border p-3 text-sm" open={p.diagnostics.receipts.some((r) => r.outcome !== "accepted")}>
-            <summary className="cursor-pointer font-medium">Recent webhook deliveries</summary>
+            <summary className="cursor-pointer font-medium">Последние входящие вебхуки</summary>
             <div className="mt-3 space-y-2 text-xs">
               {p.diagnostics.receipts.length === 0 ? (
                 <div className="space-y-1 text-muted-foreground">
-                  <p className="font-medium text-amber-700">No requests from Meta have reached the server yet.</p>
-                  <p>Check in the Meta App Dashboard: the app is in Live mode, the webhook “messages” field is subscribed, and the account you message from isn&apos;t the connected account itself. In development mode, the sender also needs a role in the app.</p>
+                  <p className="font-medium text-amber-700">Запросы от Meta на сервер пока не поступали.</p>
+                  <p>Проверьте в панели приложения Meta: приложение опубликовано, подписка на поле вебхука «messages» включена, а сообщение отправлено не с самого подключённого аккаунта. Пока приложение в режиме разработки, у отправителя тоже должна быть роль в приложении.</p>
                 </div>
               ) : (
                 <ul className="divide-y rounded-md border">
@@ -214,8 +226,8 @@ export function InstagramCard(p: InstagramCardProps) {
                         <p className="flex flex-wrap items-center gap-2">
                           <span className={cn("font-medium", o.tone === "ok" ? "text-success" : o.tone === "bad" ? "text-destructive" : "text-amber-700")}>{o.label}</span>
                           <span className="text-muted-foreground">HTTP {r.httpStatus}</span>
-                          {r.eventCount > 0 && <span className="text-muted-foreground">· {r.eventKinds.join(", ")}</span>}
-                          {r.idHint && <span className="text-muted-foreground">· account {r.idHint}</span>}
+                          {r.eventCount > 0 && <span className="text-muted-foreground">· {r.eventKinds.map((k) => kindText[k] ?? k).join(", ")}</span>}
+                          {r.idHint && <span className="text-muted-foreground">· аккаунт {r.idHint}</span>}
                           <RelativeTime date={r.receivedAt} className="ml-auto text-muted-foreground" />
                         </p>
                         {o.help && <p className="text-muted-foreground">{o.help}</p>}
@@ -224,30 +236,30 @@ export function InstagramCard(p: InstagramCardProps) {
                   })}
                 </ul>
               )}
-              <p className="text-muted-foreground">Connected account IDs: {p.diagnostics.ownIdHints.join(", ") || "—"}. Message text is never stored here.</p>
+              <p className="text-muted-foreground">ID подключённого аккаунта: {p.diagnostics.ownIdHints.join(", ") || "—"}. Текст сообщений здесь не сохраняется.</p>
             </div>
           </details>
         )}
 
         <details className="rounded-lg border p-3 text-sm">
-          <summary className="cursor-pointer font-medium">Webhook setup in Meta</summary>
+          <summary className="cursor-pointer font-medium">Настройка вебхука в Meta</summary>
           <div className="mt-3 space-y-2 text-xs">
-            <p>In the Meta App Dashboard → Instagram → API setup with Instagram login → Configure webhooks, enter:</p>
-            <p className="font-medium">Callback URL</p>
+            <p>В панели приложения Meta → Instagram → «Настройка API для входа в Instagram» → «Настройте Webhooks» укажите:</p>
+            <p className="font-medium">URL обратного вызова</p>
             {p.callbackUrl ? (
               <div className="flex items-center gap-2">
                 <code className="flex-1 truncate rounded bg-muted px-2 py-1">{p.callbackUrl}</code>
-                <Button size="icon-sm" variant="ghost" aria-label="Copy callback URL" onClick={() => navigator.clipboard.writeText(p.callbackUrl!).then(() => toast.success("Copied"))}>
+                <Button size="icon-sm" variant="ghost" aria-label="Скопировать URL обратного вызова" onClick={() => navigator.clipboard.writeText(p.callbackUrl!).then(() => toast.success("Скопировано"))}>
                   <Copy />
                 </Button>
               </div>
             ) : (
-              <p className="text-amber-700">Set APP_BASE_URL to your public HTTPS domain to see the exact URL (https://YOUR-DEPLOYED-DOMAIN/api/webhooks/instagram).</p>
+              <p className="text-amber-700">Укажите в APP_BASE_URL публичный HTTPS-домен, чтобы увидеть точный адрес (https://ВАШ-ДОМЕН/api/webhooks/instagram).</p>
             )}
-            {p.callbackUrl?.startsWith("http://") && <p className="text-amber-700">Meta requires HTTPS with a valid certificate. Localhost isn&apos;t reachable by Meta without a secure tunnel.</p>}
-            <p className="font-medium">Verify token</p>
-            <p>{p.verifyTokenConfigured ? "The exact value of INSTAGRAM_WEBHOOK_VERIFY_TOKEN from your server environment (not shown here)." : <span className="text-amber-700">INSTAGRAM_WEBHOOK_VERIFY_TOKEN is not set — verification will fail.</span>}</p>
-            <p className="text-muted-foreground">Then subscribe to the <code>messages</code> field. This page can&apos;t see whether Meta verified the URL; “Last event received” confirms delivery once messages arrive.</p>
+            {p.callbackUrl?.startsWith("http://") && <p className="text-amber-700">Meta требует HTTPS с действительным сертификатом. Без защищённого туннеля Meta не может обратиться к localhost.</p>}
+            <p className="font-medium">Маркер подтверждения</p>
+            <p>{p.verifyTokenConfigured ? "Точное значение INSTAGRAM_WEBHOOK_VERIFY_TOKEN из переменных окружения сервера (здесь не показывается)." : <span className="text-amber-700">INSTAGRAM_WEBHOOK_VERIFY_TOKEN не задан — подтверждение не пройдёт.</span>}</p>
+            <p className="text-muted-foreground">Затем подпишитесь на поле <code>messages</code>. Эта страница не видит, подтвердила ли Meta адрес; доставку подтвердит строка «Последнее событие», когда придут сообщения.</p>
           </div>
         </details>
       </CardContent>
@@ -255,13 +267,13 @@ export function InstagramCard(p: InstagramCardProps) {
       <AlertDialog open={confirm} onOpenChange={setConfirm}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Disconnect @{c?.username}?</AlertDialogTitle>
+            <AlertDialogTitle>Отключить @{c?.username}?</AlertDialogTitle>
             <AlertDialogDescription>
-              The stored access token is deleted and new Instagram messages will no longer arrive. Existing conversations stay in your inbox.
+              Сохранённый токен доступа будет удалён, и новые сообщения из Instagram перестанут поступать. Существующие диалоги останутся во входящих.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Отмена</AlertDialogCancel>
             <AlertDialogAction
               onClick={() =>
                 start(async () => {
@@ -271,7 +283,7 @@ export function InstagramCard(p: InstagramCardProps) {
                 })
               }
             >
-              Disconnect
+              Отключить
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

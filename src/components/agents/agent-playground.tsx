@@ -55,8 +55,8 @@ export function AgentPlayground({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Test chat</CardTitle>
-        <CardDescription>Talk to {agentName} as a customer would. Nothing is sent to any real channel.</CardDescription>
+        <CardTitle>Тестовый чат</CardTitle>
+        <CardDescription>Пообщайтесь с агентом «{agentName}» как клиент. В реальные каналы ничего не отправляется.</CardDescription>
         <CardAction>
           <Button
             variant="outline"
@@ -70,19 +70,19 @@ export function AgentPlayground({
               })
             }
           >
-            <RotateCcw aria-hidden /> Reset
+            <RotateCcw aria-hidden /> Сбросить
           </Button>
         </CardAction>
       </CardHeader>
       <CardContent className="space-y-3">
         {status === "needs_human" && (
           <p className="flex items-center gap-2 rounded-lg bg-warning/15 px-3 py-2 text-xs text-amber-800">
-            <Hand className="size-4" aria-hidden /> This conversation was handed off to a human. Reset to start over.
+            <Hand className="size-4" aria-hidden /> Диалог передан человеку. Нажмите «Сбросить», чтобы начать заново.
           </p>
         )}
         <div className="h-[420px] space-y-3 overflow-y-auto rounded-lg border bg-muted/30 p-3" aria-live="polite">
           {messages.length === 0 && !pendingText && (
-            <p className="py-16 text-center text-sm text-muted-foreground">Ask a question to see how the agent answers.</p>
+            <p className="py-16 text-center text-sm text-muted-foreground">Задайте вопрос, чтобы посмотреть, как отвечает агент.</p>
           )}
           {messages.map((m) => (
             <Bubble key={m.id} m={m} />
@@ -91,7 +91,7 @@ export function AgentPlayground({
             <>
               <div className="ml-auto max-w-[80%] rounded-2xl rounded-br-sm bg-primary px-3 py-2 text-sm text-primary-foreground opacity-70">{pendingText}</div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                <Loader2 className="size-3.5 animate-spin" aria-hidden /> {agentName} is replying…
+                <Loader2 className="size-3.5 animate-spin" aria-hidden /> {agentName} печатает…
               </div>
             </>
           )}
@@ -103,8 +103,8 @@ export function AgentPlayground({
           </p>
         )}
         <form onSubmit={send} className="flex gap-2">
-          <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Type a customer message…" aria-label="Message" maxLength={2000} disabled={sending} />
-          <Button type="submit" disabled={sending || !draft.trim()} aria-label="Send">
+          <Input value={draft} onChange={(e) => setDraft(e.target.value)} placeholder="Напишите сообщение от имени клиента…" aria-label="Сообщение" maxLength={2000} disabled={sending} />
+          <Button type="submit" disabled={sending || !draft.trim()} aria-label="Отправить">
             <SendHorizontal aria-hidden />
           </Button>
         </form>
@@ -128,9 +128,9 @@ function Bubble({ m }: { m: ChatMessageView }) {
       </div>
       {!mine && (
         <div className="flex max-w-[80%] flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground">
-          <span className="rounded bg-muted px-1.5 py-0.5">{p.provider === "demo" ? "demo mode" : p.provider === "rules" ? "escalation rule" : p.provider?.replace("gemini:", "") ?? "agent"}</span>
-          {p.answered === false && <span className="rounded bg-warning/15 px-1.5 py-0.5 text-amber-800">fallback</span>}
-          {p.handoff && <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-destructive">handed off</span>}
+          <span className="rounded bg-muted px-1.5 py-0.5">{p.provider === "demo" ? "демо-режим" : p.provider === "rules" ? "правило передачи" : p.provider?.replace("gemini:", "") ?? "агент"}</span>
+          {p.answered === false && <span className="rounded bg-warning/15 px-1.5 py-0.5 text-amber-800">запасной ответ</span>}
+          {p.handoff && <span className="rounded bg-destructive/10 px-1.5 py-0.5 text-destructive">передано человеку</span>}
           {p.usedSources?.map((s) => (
             <span key={s.id} className="inline-flex items-center gap-1 rounded bg-accent px-1.5 py-0.5 text-accent-foreground">
               <BookOpen className="size-3" aria-hidden /> {s.title}

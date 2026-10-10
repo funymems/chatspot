@@ -52,7 +52,7 @@ export class RetryableError extends Error {
 
 export class NodeTimeoutError extends RetryableError {
   constructor(nodeType: string, ms: number) {
-    super(`${nodeType} step timed out after ${ms / 1000}s`);
+    super(`Шаг «${nodeType}» не уложился в ${ms / 1000} с`);
     this.name = "NodeTimeoutError";
   }
 }

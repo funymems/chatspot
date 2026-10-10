@@ -15,7 +15,7 @@ import { idSchema } from "@/lib/validation/automation";
 import { getContactTags } from "@/lib/server/services/contact-data";
 
 const sendSchema = z.object({
-  text: z.string().max(2000, "Messages are limited to 2000 characters"),
+  text: z.string().max(2000, "Сообщение — не более 2000 символов"),
   eventId: z.uuid(),
 });
 
@@ -84,7 +84,7 @@ export async function resetTestSessionAction(slug: string): Promise<ActionResult
   return runAction("test.reset", async () => {
     const ctx = await authorizeWorkspace(slug);
     await resetTestSession(ctx);
-    return { ok: true, data: null, message: "Test conversation reset" };
+    return { ok: true, data: null, message: "Тестовый диалог сброшен" };
   });
 }
 
@@ -92,6 +92,6 @@ export async function retryExecutionAction(slug: string, executionId: string): P
   return runAction("execution.retry", async () => {
     const ctx = await authorizeWorkspace(slug);
     const exec = await retryTestOrLiveExecution(ctx, idSchema.parse(executionId));
-    return { ok: true, data: { id: exec.id, status: exec.status }, message: "Run retried" };
+    return { ok: true, data: { id: exec.id, status: exec.status }, message: "Запуск повторён" };
   });
 }

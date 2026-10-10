@@ -61,17 +61,17 @@ class GeminiProvider implements LLMProvider {
         inputTokens: res.usageMetadata?.promptTokenCount,
         outputTokens: res.usageMetadata?.candidatesTokenCount,
       });
-      if (!text) throw new Error("The AI provider returned an empty response");
+      if (!text) throw new Error("Сервис ИИ вернул пустой ответ");
       return { text, inputTokens: res.usageMetadata?.promptTokenCount, outputTokens: res.usageMetadata?.candidatesTokenCount };
     } catch (err) {
       if (err instanceof ApiError) {
         logger.warn("ai.error", { provider: this.id, model: this.model, status: err.status, message: err.message });
-        if (err.status === 429 || err.status >= 500) throw new RetryableError(`AI provider is temporarily unavailable (${err.status})`);
-        if (err.status === 401 || err.status === 403) throw new Error("The AI provider rejected the API key. Check GEMINI_API_KEY.");
-        throw new Error(`AI provider error (${err.status}): ${err.message.slice(0, 200)}`);
+        if (err.status === 429 || err.status >= 500) throw new RetryableError(`Сервис ИИ временно недоступен (${err.status})`);
+        if (err.status === 401 || err.status === 403) throw new Error("Сервис ИИ отклонил API-ключ. Проверьте GEMINI_API_KEY.");
+        throw new Error(`Ошибка сервиса ИИ (${err.status}): ${err.message.slice(0, 200)}`);
       }
       if (err instanceof Error && /timeout|aborted|ECONNRESET|fetch failed/i.test(err.message)) {
-        throw new RetryableError("AI provider timed out");
+        throw new RetryableError("Сервис ИИ не ответил вовремя");
       }
       throw err;
     }
@@ -91,5 +91,5 @@ export function aiStatus(): AiStatus {
   const p = getAiProvider();
   return p
     ? { mode: "live", provider: "Google Gemini", model: p.model }
-    : { mode: "demo", reason: "GEMINI_API_KEY is not set, so AI features use the built-in deterministic demo mode." };
+    : { mode: "demo", reason: "GEMINI_API_KEY не задан, поэтому функции ИИ работают во встроенном демо-режиме." };
 }

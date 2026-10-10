@@ -11,14 +11,14 @@ import { recordActivity } from "./activity";
 export type Agent = typeof aiAgents.$inferSelect;
 export type KnowledgeSource = typeof knowledgeSources.$inferSelect;
 
-const DEFAULT_FALLBACK = "I'm not sure about that one — let me get a member of our team to help you.";
+const DEFAULT_FALLBACK = "Не уверен, что смогу точно ответить, — сейчас подключу сотрудника нашей команды.";
 
 const roleDefaults: Record<Agent["role"], string> = {
-  general: "You are a helpful assistant for this business. Answer questions clearly and briefly.",
+  general: "Ты — вежливый помощник этого бизнеса. Отвечай на вопросы понятно и коротко.",
   support:
-    "You are a customer support agent. Resolve questions using the knowledge base, be empathetic, and offer a human when you can't help.",
+    "Ты — агент службы поддержки. Решай вопросы с помощью базы знаний, будь внимателен к клиенту и предлагай связаться с сотрудником, если не можешь помочь.",
   sales:
-    "You are a friendly sales assistant. Help people find the right product, answer questions about offers from the knowledge base, and guide them to the next step.",
+    "Ты — дружелюбный консультант по продажам. Помогай подобрать подходящий товар, отвечай на вопросы о предложениях по базе знаний и подводи к следующему шагу.",
 };
 
 // ─── Agents ─────────────────────────────────────────────────────────────────
@@ -53,7 +53,7 @@ export async function listAgents(ctx: WorkspaceContext) {
 export async function getAgent(ctx: WorkspaceContext, id: string): Promise<Agent> {
   const db = await getDb();
   const [row] = await db.select().from(aiAgents).where(and(eq(aiAgents.id, id), eq(aiAgents.workspaceId, ctx.workspaceId))).limit(1);
-  if (!row) throw notFound("AI agent");
+  if (!row) throw notFound("ИИ-агент");
   return row;
 }
 
@@ -71,7 +71,7 @@ export async function createAgent(ctx: WorkspaceContext, input: { name: string; 
       escalationRules: { keywords: [], onNoAnswer: false, onExplicitRequest: true },
     })
     .returning();
-  await recordActivity(ctx, { type: "agent.created", summary: `AI agent “${row!.name}” created`, entityType: "agent", entityId: row!.id });
+  await recordActivity(ctx, { type: "agent.created", summary: `Создан ИИ-агент «${row!.name}»`, entityType: "agent", entityId: row!.id });
   return row!;
 }
 
@@ -91,7 +91,7 @@ export async function deleteAgent(ctx: WorkspaceContext, id: string) {
   const agent = await getAgent(ctx, id);
   const db = await getDb();
   await db.delete(aiAgents).where(and(eq(aiAgents.id, id), eq(aiAgents.workspaceId, ctx.workspaceId)));
-  await recordActivity(ctx, { type: "agent.deleted", summary: `AI agent “${agent.name}” deleted`, entityType: "agent" });
+  await recordActivity(ctx, { type: "agent.deleted", summary: `Удалён ИИ-агент «${agent.name}»`, entityType: "agent" });
 }
 
 // ─── Knowledge ──────────────────────────────────────────────────────────────
@@ -166,7 +166,7 @@ async function getSource(ctx: WorkspaceContext, sourceId: string) {
     .from(knowledgeSources)
     .where(and(eq(knowledgeSources.id, sourceId), eq(knowledgeSources.workspaceId, ctx.workspaceId)))
     .limit(1);
-  if (!s) throw notFound("Knowledge source");
+  if (!s) throw notFound("источник знаний");
   return s;
 }
 
@@ -176,7 +176,7 @@ export async function updateKnowledgeSource(
   input: { title?: string; content?: string; question?: string; answer?: string },
 ) {
   const s = await getSource(ctx, sourceId);
-  if (s.type === "qa" && (input.question === undefined || input.answer === undefined)) throw validationError("Question and answer are required");
+  if (s.type === "qa" && (input.question === undefined || input.answer === undefined)) throw validationError("Укажите вопрос и ответ");
   const db = await getDb();
   const [updated] = await db
     .update(knowledgeSources)
@@ -244,7 +244,7 @@ export async function resolveUnanswered(ctx: WorkspaceContext, id: string, answe
     .from(unansweredQuestions)
     .where(and(eq(unansweredQuestions.id, id), eq(unansweredQuestions.workspaceId, ctx.workspaceId)))
     .limit(1);
-  if (!q) throw notFound("Question");
+  if (!q) throw notFound("вопрос");
   if (answer?.trim()) await addKnowledgeQa(ctx, q.agentId, { question: q.question, answer: answer.trim() });
   await db.update(unansweredQuestions).set({ resolvedAt: new Date() }).where(eq(unansweredQuestions.id, id));
 }

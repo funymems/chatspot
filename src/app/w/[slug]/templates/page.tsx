@@ -9,14 +9,14 @@ import { listTemplates } from "@/lib/server/services/templates";
 import { templateCategories, type TemplateCategory } from "@/lib/domain/template-categories";
 import { cn } from "@/lib/utils";
 
-export const metadata: Metadata = { title: "Templates" };
+export const metadata: Metadata = { title: "Шаблоны" };
 
 type Props = PageProps<"/w/[slug]/templates">;
 
 export default function TemplatesPage({ params, searchParams }: Props) {
   return (
     <PageContainer>
-      <PageHeader title="Templates" description="Start from proven, ready-to-customise automation flows." />
+      <PageHeader title="Шаблоны" description="Готовые проверенные сценарии, которые можно настроить под себя." />
       <Suspense
         fallback={
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
@@ -43,13 +43,13 @@ async function Gallery({ params, searchParams }: Pick<Props, "params" | "searchP
 
   return (
     <div className="space-y-4">
-      <nav className="flex flex-wrap gap-1.5" aria-label="Categories">
+      <nav className="flex flex-wrap gap-1.5" aria-label="Категории">
         <Link
           href={`/w/${slug}/templates`}
           aria-current={!category ? "page" : undefined}
           className={cn("rounded-full border px-3 py-1 text-sm", !category ? "border-primary bg-primary text-primary-foreground" : "hover:bg-muted")}
         >
-          All ({all.length})
+          Все ({all.length})
         </Link>
         {(Object.entries(templateCategories) as [TemplateCategory, string][])
           .filter(([key]) => used.has(key))

@@ -7,7 +7,7 @@ import { requireUser } from "@/lib/server/auth/guards";
 import { defaultWorkspaceFor } from "@/lib/server/services/workspaces";
 import { OnboardingForm } from "./onboarding-form";
 
-export const metadata: Metadata = { title: "Create a workspace" };
+export const metadata: Metadata = { title: "Новое рабочее пространство" };
 
 export default function OnboardingPage() {
   return (
@@ -26,8 +26,8 @@ async function Onboarding() {
       <div className="w-full max-w-sm space-y-6">
         <Logo />
         <div className="space-y-1.5">
-          <h1 className="text-2xl font-semibold tracking-tight">Create a workspace</h1>
-          <p className="text-sm text-muted-foreground">You aren&apos;t a member of any workspace yet.</p>
+          <h1 className="text-2xl font-semibold tracking-tight">Создайте рабочее пространство</h1>
+          <p className="text-sm text-muted-foreground">Вы пока не состоите ни в одном рабочем пространстве.</p>
         </div>
         <OnboardingForm />
       </div>

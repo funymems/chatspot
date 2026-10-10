@@ -34,7 +34,7 @@ export function KnowledgeTab({ slug, agentId, sources }: { slug: string; agentId
     : sources;
 
   const remove = async (s: SourceView) => {
-    if (!window.confirm(`Remove “${s.title}” from the knowledge base?`)) return;
+    if (!window.confirm(`Удалить «${s.title}» из базы знаний?`)) return;
     setBusyId(s.id);
     const res = await deleteKnowledgeAction(slug, s.id);
     setBusyId(null);
@@ -46,7 +46,7 @@ export function KnowledgeTab({ slug, agentId, sources }: { slug: string; agentId
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Knowledge base</CardTitle>
+          <CardTitle>База знаний</CardTitle>
           <CardDescription>
             The agent searches these sources for every question and answers only from what it finds. {sources.length} source
             {sources.length === 1 ? "" : "s"}.
@@ -56,17 +56,17 @@ export function KnowledgeTab({ slug, agentId, sources }: { slug: string; agentId
           <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute top-1/2 left-2.5 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden />
-              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search sources" aria-label="Search sources" className="pl-8" />
+              <Input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Поиск по источникам" aria-label="Поиск по источникам" className="pl-8" />
             </div>
             <div className="flex flex-wrap gap-2">
               <Button variant="outline" size="sm" onClick={() => setEditing({ kind: "qa" })}>
-                <MessageCircleQuestion aria-hidden /> Add Q&amp;A
+                <MessageCircleQuestion aria-hidden /> Добавить вопрос-ответ
               </Button>
               <Button variant="outline" size="sm" onClick={() => setEditing({ kind: "text" })}>
-                <FileText aria-hidden /> Add document
+                <FileText aria-hidden /> Добавить документ
               </Button>
               <Button variant="outline" size="sm" onClick={() => fileRef.current?.click()} disabled={uploading}>
-                <Upload aria-hidden /> {uploading ? "Uploading…" : "Upload file"}
+                <Upload aria-hidden /> {uploading ? "Загружаем…" : "Загрузить файл"}
               </Button>
               <input
                 ref={fileRef}
@@ -88,17 +88,17 @@ export function KnowledgeTab({ slug, agentId, sources }: { slug: string; agentId
               />
             </div>
           </div>
-          <p className="text-xs text-muted-foreground">Uploads: .txt, .md and .csv up to 1 MB. PDF and Word files aren&apos;t supported yet.</p>
+          <p className="text-xs text-muted-foreground">Можно загружать .txt, .md и .csv до 1 МБ. PDF и Word пока не поддерживаются.</p>
 
           {sources.length === 0 ? (
             <EmptyState
               compact
               icon={FileText}
-              title="No knowledge yet"
-              description="Add FAQs as Q&A pairs, or paste documents such as your price list, policies and product descriptions."
+              title="База знаний пуста"
+              description="Добавьте частые вопросы в формате «вопрос — ответ» или вставьте документы: прайс-лист, правила, описания товаров."
             />
           ) : visible.length === 0 ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">No sources match “{q}”.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">По запросу «{q}» ничего не найдено.</p>
           ) : (
             <ul className="divide-y rounded-lg border">
               {visible.map((s) => (
@@ -110,16 +110,16 @@ export function KnowledgeTab({ slug, agentId, sources }: { slug: string; agentId
                     <p className="truncate text-sm font-medium">{s.title}</p>
                     <p className="line-clamp-2 text-xs text-muted-foreground">{s.type === "qa" ? s.answer : s.content}</p>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {s.type === "qa" ? "Q&A" : s.type === "file" ? `File · ${s.fileName}` : "Document"} · updated <RelativeTime date={s.updatedAt} />
+                      {s.type === "qa" ? "Вопрос-ответ" : s.type === "file" ? `Файл · ${s.fileName}` : "Документ"} · обновлено <RelativeTime date={s.updatedAt} />
                     </p>
                   </div>
-                  <Button variant="ghost" size="icon-sm" aria-label={`Edit ${s.title}`} onClick={() => setEditing({ kind: s.type === "qa" ? "qa" : "text", source: s })}>
+                  <Button variant="ghost" size="icon-sm" aria-label={`Изменить: ${s.title}`} onClick={() => setEditing({ kind: s.type === "qa" ? "qa" : "text", source: s })}>
                     <Pencil />
                   </Button>
                   <Button
                     variant="ghost"
                     size="icon-sm"
-                    aria-label={`Remove ${s.title}`}
+                    aria-label={`Удалить: ${s.title}`}
                     className="hover:text-destructive"
                     disabled={busyId === s.id}
                     onClick={() => remove(s)}
@@ -172,28 +172,28 @@ function SourceDialog({ slug, agentId, editing, onClose }: { slug: string; agent
           }}
         >
           <DialogHeader>
-            <DialogTitle>{s ? "Edit source" : isQa ? "Add Q&A" : "Add document"}</DialogTitle>
+            <DialogTitle>{s ? "Изменить источник" : isQa ? "Новый вопрос-ответ" : "Новый документ"}</DialogTitle>
             <DialogDescription>
-              {isQa ? "A question customers ask and the exact answer the agent should give." : "Paste text such as policies, price lists or product details."}
+              {isQa ? "Вопрос, который задают клиенты, и точный ответ, который должен дать агент." : "Вставьте текст: правила, прайс-лист или описание товаров."}
             </DialogDescription>
           </DialogHeader>
           {isQa ? (
             <>
-              <TextField label="Question" value={v.question} onChange={(question) => setV({ ...v, question })} error={errors.question?.[0]} placeholder="Do you ship internationally?" />
-              <TextAreaField label="Answer" value={v.answer} onChange={(answer) => setV({ ...v, answer })} rows={4} error={errors.answer?.[0]} />
+              <TextField label="Вопрос" value={v.question} onChange={(question) => setV({ ...v, question })} error={errors.question?.[0]} placeholder="Вы доставляете в другие города?" />
+              <TextAreaField label="Ответ" value={v.answer} onChange={(answer) => setV({ ...v, answer })} rows={4} error={errors.answer?.[0]} />
             </>
           ) : (
             <>
-              <TextField label="Title" value={v.title} onChange={(title) => setV({ ...v, title })} error={errors.title?.[0]} placeholder="Shipping & returns" />
-              <TextAreaField label="Content" value={v.content} onChange={(content) => setV({ ...v, content })} rows={10} error={errors.content?.[0]} />
+              <TextField label="Заголовок" value={v.title} onChange={(title) => setV({ ...v, title })} error={errors.title?.[0]} placeholder="Доставка и возврат" />
+              <TextAreaField label="Текст" value={v.content} onChange={(content) => setV({ ...v, content })} rows={10} error={errors.content?.[0]} />
             </>
           )}
           <DialogFooter>
             <Button type="button" variant="outline" onClick={onClose}>
-              Cancel
+              Отмена
             </Button>
             <Button type="submit" disabled={pending}>
-              {pending ? "Saving…" : "Save"}
+              {pending ? "Сохраняем…" : "Сохранить"}
             </Button>
           </DialogFooter>
         </form>
@@ -209,8 +209,8 @@ function RetrievalCheck({ slug, agentId, disabled }: { slug: string; agentId: st
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Test retrieval</CardTitle>
-        <CardDescription>Check which knowledge the agent would find for a question — no AI call is made.</CardDescription>
+        <CardTitle>Проверка поиска</CardTitle>
+        <CardDescription>Проверьте, что агент найдёт в базе знаний по вопросу — ИИ при этом не вызывается.</CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         <form
@@ -224,22 +224,22 @@ function RetrievalCheck({ slug, agentId, disabled }: { slug: string; agentId: st
             });
           }}
         >
-          <Input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="e.g. How long does delivery take?" aria-label="Test question" disabled={disabled} />
+          <Input value={question} onChange={(e) => setQuestion(e.target.value)} placeholder="Например: сколько идёт доставка?" aria-label="Тестовый вопрос" disabled={disabled} />
           <Button type="submit" disabled={disabled || pending || !question.trim()}>
-            {pending ? "Searching…" : "Search"}
+            {pending ? "Ищем…" : "Найти"}
           </Button>
         </form>
         {hits &&
           (hits.length === 0 ? (
             <p className="rounded-lg bg-warning/10 p-3 text-sm text-amber-800">
-              Nothing relevant found — the agent would use its fallback response and log this as an unanswered question.
+              Ничего подходящего не найдено — агент отправит запасной ответ и запишет вопрос в «Без ответа».
             </p>
           ) : (
             <ol className="space-y-2">
               {hits.map((h, i) => (
                 <li key={i} className="rounded-lg border p-3 text-sm">
                   <p className="flex items-center justify-between font-medium">
-                    {h.title} <span className="text-xs font-normal text-muted-foreground">score {h.rank.toFixed(2)}</span>
+                    {h.title} <span className="text-xs font-normal text-muted-foreground">релевантность {h.rank.toFixed(2)}</span>
                   </p>
                   <p className="mt-1 line-clamp-3 text-xs text-muted-foreground">{h.content}</p>
                 </li>

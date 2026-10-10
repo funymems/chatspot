@@ -65,7 +65,7 @@ export function AppShell({
           "sticky top-0 hidden h-svh shrink-0 flex-col bg-sidebar text-sidebar-foreground transition-[width] duration-200 lg:flex",
           collapsed ? "w-[68px]" : "w-64",
         )}
-        aria-label="Main navigation"
+        aria-label="Основная навигация"
       >
         <SidebarContent workspace={workspace} workspaces={workspaces} user={user} collapsed={collapsed} />
         <div className={cn("border-t border-sidebar-border p-2", collapsed && "flex justify-center")}>
@@ -74,10 +74,10 @@ export function AppShell({
             size={collapsed ? "icon" : "sm"}
             className="w-full justify-start text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
             onClick={() => collapseStore.set(!collapsed)}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Развернуть боковую панель" : "Свернуть боковую панель"}
           >
             {collapsed ? <PanelLeftOpen /> : <PanelLeftClose />}
-            {!collapsed && <span>Collapse</span>}
+            {!collapsed && <span>Свернуть</span>}
           </Button>
         </div>
       </aside>
@@ -85,14 +85,14 @@ export function AppShell({
       {/* Mobile / tablet drawer */}
       <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
         <SheetContent side="left" className="w-72 border-none bg-sidebar p-0 text-sidebar-foreground">
-          <SheetTitle className="sr-only">Navigation</SheetTitle>
+          <SheetTitle className="sr-only">Навигация</SheetTitle>
           <SidebarContent workspace={workspace} workspaces={workspaces} user={user} collapsed={false} />
         </SheetContent>
       </Sheet>
 
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="sticky top-0 z-30 flex h-14 items-center gap-3 border-b bg-background/80 px-4 backdrop-blur lg:hidden">
-          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Open navigation">
+          <Button variant="ghost" size="icon" onClick={() => setMobileOpen(true)} aria-label="Открыть меню">
             <Menu />
           </Button>
           <Logo />
@@ -119,14 +119,14 @@ function SidebarContent({
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <div className={cn("flex h-14 items-center px-4", collapsed && "justify-center px-0")}>
-        <Link href={`/w/${workspace.slug}/dashboard`} aria-label="ChatSpot home">
+        <Link href={`/w/${workspace.slug}/dashboard`} aria-label="ChatSpot — главная">
           {collapsed ? <LogoMark /> : <Logo inverted />}
         </Link>
       </div>
       <div className="px-2 pb-2">
         <WorkspaceSwitcher current={workspace} workspaces={workspaces} collapsed={collapsed} />
       </div>
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-2" aria-label="Primary">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto px-2 py-2" aria-label="Разделы">
         {mainNav.map((item) => (
           <NavLink key={item.segment} item={item} slug={workspace.slug} collapsed={collapsed} />
         ))}

@@ -62,7 +62,7 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
       {node.type !== "trigger" && <Handle type="target" position={Position.Top} className={handleClass} />}
       {isStart && (
         <span className="absolute -top-2.5 left-3 rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
-          START
+          СТАРТ
         </span>
       )}
       <div className="flex items-center gap-2 border-b px-3 py-2">
@@ -71,14 +71,14 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
         </span>
         <span className="min-w-0 flex-1 truncate text-sm font-medium">{nodeDisplayName(node)}</span>
         {errorCount > 0 && (
-          <span className="flex items-center gap-0.5 text-xs text-destructive" title={`${errorCount} problem(s)`}>
+          <span className="flex items-center gap-0.5 text-xs text-destructive" title={`Ошибок: ${errorCount}`}>
             <AlertTriangle className="size-3.5" aria-hidden /> {errorCount}
           </span>
         )}
-        {runStatus === "success" && <CheckCircle2 className="size-4 text-success" aria-label="Succeeded" />}
-        {runStatus === "failed" && <XCircle className="size-4 text-destructive" aria-label="Failed" />}
-        {runStatus === "running" && <Loader2 className="size-4 animate-spin text-primary" aria-label="Running" />}
-        {runStatus === "waiting" && <Clock className="size-4 text-warning" aria-label="Waiting" />}
+        {runStatus === "success" && <CheckCircle2 className="size-4 text-success" aria-label="Успешно" />}
+        {runStatus === "failed" && <XCircle className="size-4 text-destructive" aria-label="Ошибка" />}
+        {runStatus === "running" && <Loader2 className="size-4 animate-spin text-primary" aria-label="Выполняется" />}
+        {runStatus === "waiting" && <Clock className="size-4 text-warning" aria-label="Ожидание" />}
       </div>
       <div className="space-y-0.5 px-3 py-2 text-xs text-muted-foreground">
         {lines.map((l, i) => (
@@ -92,8 +92,8 @@ export function FlowNodeCard({ data, selected }: NodeProps<FlowNode>) {
           <Handle id="true" type="source" position={Position.Bottom} style={{ left: "30%" }} className={cn(handleClass, "!bg-success")} />
           <Handle id="false" type="source" position={Position.Bottom} style={{ left: "70%" }} className={cn(handleClass, "!bg-destructive")} />
           <div className="flex justify-between px-[22%] pb-1 text-[10px] font-medium uppercase tracking-wide">
-            <span className="text-success">Yes</span>
-            <span className="text-destructive">No</span>
+            <span className="text-success">Да</span>
+            <span className="text-destructive">Нет</span>
           </div>
         </>
       ) : node.type !== "end" ? (

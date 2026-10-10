@@ -2,11 +2,11 @@ import { Bot, CircleStop, GitFork, MessageSquareText, StickyNote, Zap, Wrench, t
 import type { NodeType } from "@/lib/domain/graph/schema";
 
 export const nodeMeta: Record<NodeType, { label: string; icon: LucideIcon; accent: string; description: string }> = {
-  trigger: { label: "Trigger", icon: Zap, accent: "bg-violet-600 text-white", description: "Starts the flow" },
-  message: { label: "Message", icon: MessageSquareText, accent: "bg-sky-600 text-white", description: "Send one or more messages" },
-  condition: { label: "Condition", icon: GitFork, accent: "bg-amber-500 text-white", description: "Branch on a rule" },
-  action: { label: "Action", icon: Wrench, accent: "bg-emerald-600 text-white", description: "Tag, set fields, capture, wait" },
-  ai_response: { label: "AI response", icon: Bot, accent: "bg-fuchsia-600 text-white", description: "Reply with an AI agent" },
-  note: { label: "Note", icon: StickyNote, accent: "bg-yellow-400 text-yellow-950", description: "Annotation, never runs" },
-  end: { label: "End", icon: CircleStop, accent: "bg-zinc-700 text-white", description: "Finish the run" },
+  trigger: { label: "Триггер", icon: Zap, accent: "bg-violet-600 text-white", description: "Запускает сценарий" },
+  message: { label: "Сообщение", icon: MessageSquareText, accent: "bg-sky-600 text-white", description: "Отправляет одно или несколько сообщений" },
+  condition: { label: "Условие", icon: GitFork, accent: "bg-amber-500 text-white", description: "Ветвление по правилу" },
+  action: { label: "Действие", icon: Wrench, accent: "bg-emerald-600 text-white", description: "Теги, поля, сбор данных, пауза" },
+  ai_response: { label: "Ответ ИИ", icon: Bot, accent: "bg-fuchsia-600 text-white", description: "Отвечает с помощью ИИ-агента" },
+  note: { label: "Заметка", icon: StickyNote, accent: "bg-yellow-400 text-yellow-950", description: "Комментарий, не выполняется" },
+  end: { label: "Конец", icon: CircleStop, accent: "bg-zinc-700 text-white", description: "Завершает запуск" },
 };

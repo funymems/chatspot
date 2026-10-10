@@ -9,7 +9,7 @@ import { getAutomation, listAutomationOptions } from "@/lib/server/services/auto
 import { listAgentOptions } from "@/lib/server/services/agents";
 import { idSchema } from "@/lib/validation/automation";
 
-export const metadata: Metadata = { title: "Builder" };
+export const metadata: Metadata = { title: "Конструктор" };
 
 type Props = PageProps<"/w/[slug]/automations/[id]/builder">;
 
@@ -19,7 +19,7 @@ export default function BuilderPage({ params }: Props) {
       <Suspense
         fallback={
           <div className="flex h-full items-center justify-center text-sm text-muted-foreground" role="status">
-            <Loader2 className="mr-2 size-4 animate-spin" aria-hidden /> Loading builder…
+            <Loader2 className="mr-2 size-4 animate-spin" aria-hidden /> Загружаем конструктор…
           </div>
         }
       >

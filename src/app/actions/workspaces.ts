@@ -14,10 +14,10 @@ import { z } from "zod";
 export async function createWorkspaceAction(input: unknown): Promise<ActionResult<{ slug: string }>> {
   return runAction("workspace.create", async () => {
     const user = await getSessionUser();
-    if (!user) throw new AppError("Your session has expired. Sign in again.", "unauthenticated");
+    if (!user) throw new AppError("Сессия истекла. Войдите снова.", "unauthenticated");
     const { name } = parseInput(createWorkspaceSchema, input);
     const ws = await createWorkspace(user.id, name);
-    return { ok: true, data: { slug: ws.slug }, message: `Workspace “${ws.name}” created` };
+    return { ok: true, data: { slug: ws.slug }, message: `Рабочее пространство «${ws.name}» создано` };
   });
 }
 
@@ -27,19 +27,19 @@ export async function renameWorkspaceAction(slug: string, input: unknown): Promi
     const { name } = parseInput(renameWorkspaceSchema, input);
     await renameWorkspace(ctx, name);
     refresh();
-    return { ok: true, data: null, message: "Workspace renamed" };
+    return { ok: true, data: null, message: "Рабочее пространство переименовано" };
   });
 }
 
-const profileSchema = z.object({ fullName: z.string().trim().min(1, "Enter your name").max(100) });
+const profileSchema = z.object({ fullName: z.string().trim().min(1, "Введите имя").max(100) });
 
 export async function updateProfileAction(input: unknown): Promise<ActionResult<null>> {
   return runAction("profile.update", async () => {
     const user = await getSessionUser();
-    if (!user) throw new AppError("Your session has expired. Sign in again.", "unauthenticated");
+    if (!user) throw new AppError("Сессия истекла. Войдите снова.", "unauthenticated");
     const { fullName } = parseInput(profileSchema, input);
     await updateProfileName(user.id, fullName);
     refresh();
-    return { ok: true, data: null, message: "Profile updated" };
+    return { ok: true, data: null, message: "Профиль обновлён" };
   });
 }

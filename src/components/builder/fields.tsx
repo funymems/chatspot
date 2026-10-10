@@ -115,7 +115,7 @@ export function SelectField<T extends string>({
     <FieldRow label={label} htmlFor={id} error={error} hint={hint}>
       <Select value={value || undefined} onValueChange={(v) => onChange(v as T)}>
         <SelectTrigger id={id} className="w-full" aria-invalid={error ? true : undefined}>
-          <SelectValue placeholder={placeholder ?? "Select…"} />
+          <SelectValue placeholder={placeholder ?? "Выберите…"} />
         </SelectTrigger>
         <SelectContent>
           {options.map((o) => (
@@ -161,7 +161,7 @@ export function TagListField({
   onChange,
   error,
   hint,
-  placeholder = "Type and press Enter",
+  placeholder = "Введите и нажмите Enter",
 }: {
   label: string;
   values: string[];
@@ -188,7 +188,7 @@ export function TagListField({
         {values.map((v) => (
           <span key={v} className="inline-flex items-center gap-1 rounded-md bg-accent px-1.5 py-0.5 text-xs text-accent-foreground">
             {v}
-            <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} aria-label={`Remove ${v}`} className="rounded hover:text-destructive">
+            <button type="button" onClick={() => onChange(values.filter((x) => x !== v))} aria-label={`Удалить ${v}`} className="rounded hover:text-destructive">
               <X className="size-3" />
             </button>
           </span>
@@ -215,10 +215,10 @@ export function TagListField({
 }
 
 const units = [
-  { value: "1", label: "seconds" },
-  { value: "60", label: "minutes" },
-  { value: "3600", label: "hours" },
-  { value: "86400", label: "days" },
+  { value: "1", label: "сек." },
+  { value: "60", label: "мин." },
+  { value: "3600", label: "ч" },
+  { value: "86400", label: "дн." },
 ];
 
 /** Seconds stored, edited as value + unit. */
@@ -252,7 +252,7 @@ export function DurationField({
           aria-invalid={error ? true : undefined}
         />
         <Select value={String(unit)} onValueChange={(u) => onChange(Math.round((seconds / unit) * Number(u)))}>
-          <SelectTrigger className="flex-1" aria-label="Unit">
+          <SelectTrigger className="flex-1" aria-label="Единица времени">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -300,7 +300,7 @@ export function ListEditor<T>({
             size="icon-sm"
             className="mt-0.5 shrink-0 text-muted-foreground hover:text-destructive"
             onClick={() => onChange(items.filter((_, j) => j !== i))}
-            aria-label={`Remove item ${i + 1}`}
+            aria-label={`Удалить элемент ${i + 1}`}
           >
             <X />
           </Button>

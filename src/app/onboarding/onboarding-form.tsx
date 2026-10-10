@@ -24,11 +24,11 @@ export function OnboardingForm() {
         });
       }}
     >
-      <Field id="name" label="Workspace name" error={error}>
+      <Field id="name" label="Название рабочего пространства" error={error}>
         <Input {...fieldA11y("name", error)} value={name} onChange={(e) => setName(e.target.value)} className="h-9" />
       </Field>
       <Button type="submit" className="h-9 w-full" disabled={pending}>
-        {pending ? "Creating…" : "Create workspace"}
+        {pending ? "Создаём…" : "Создать рабочее пространство"}
       </Button>
     </form>
   );

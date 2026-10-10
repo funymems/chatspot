@@ -38,9 +38,9 @@ export function detectEscalation(message: string, rules: EscalationRules): strin
     const kw = words(k.toLowerCase());
     return kw.length > 0 && containsSequence(tokens, kw);
   });
-  if (keyword) return `Message contains the escalation keyword “${keyword}”`;
+  if (keyword) return `В сообщении есть стоп-слово для передачи человеку: «${keyword}»`;
   if (rules.onExplicitRequest && EXPLICIT_PATTERNS.some((p) => containsSequence(tokens, p))) {
-    return "The customer asked to talk to a person";
+    return "Клиент попросил поговорить с человеком";
   }
   return null;
 }

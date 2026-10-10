@@ -13,13 +13,13 @@ import {
 export type NavItem = { label: string; segment: string; icon: NavIcon };
 
 export const mainNav: NavItem[] = [
-  { label: "Dashboard", segment: "dashboard", icon: DashboardIcon },
-  { label: "Automations", segment: "automations", icon: AutomationsIcon },
-  { label: "AI Agents", segment: "agents", icon: AgentsIcon },
-  { label: "Contacts", segment: "contacts", icon: ContactsIcon },
-  { label: "Conversations", segment: "conversations", icon: ConversationsIcon },
-  { label: "Templates", segment: "templates", icon: TemplatesIcon },
-  { label: "Analytics", segment: "analytics", icon: AnalyticsIcon },
+  { label: "Главная", segment: "dashboard", icon: DashboardIcon },
+  { label: "Автоматизации", segment: "automations", icon: AutomationsIcon },
+  { label: "ИИ-агенты", segment: "agents", icon: AgentsIcon },
+  { label: "Контакты", segment: "contacts", icon: ContactsIcon },
+  { label: "Диалоги", segment: "conversations", icon: ConversationsIcon },
+  { label: "Шаблоны", segment: "templates", icon: TemplatesIcon },
+  { label: "Аналитика", segment: "analytics", icon: AnalyticsIcon },
 ];
 
-export const secondaryNav: NavItem[] = [{ label: "Settings", segment: "settings", icon: SettingsIcon }];
+export const secondaryNav: NavItem[] = [{ label: "Настройки", segment: "settings", icon: SettingsIcon }];

@@ -38,12 +38,12 @@ export function AgentTabs({
       }}
     >
       <TabsList className="h-auto flex-wrap">
-        <TabsTrigger value="general">General</TabsTrigger>
-        <TabsTrigger value="instructions">Instructions</TabsTrigger>
-        <TabsTrigger value="knowledge">Knowledge Base ({sources.length})</TabsTrigger>
-        <TabsTrigger value="testing">Testing</TabsTrigger>
-        <TabsTrigger value="unanswered">Unanswered{open ? ` (${open})` : ""}</TabsTrigger>
-        <TabsTrigger value="settings">Settings</TabsTrigger>
+        <TabsTrigger value="general">Основное</TabsTrigger>
+        <TabsTrigger value="instructions">Инструкции</TabsTrigger>
+        <TabsTrigger value="knowledge">База знаний ({sources.length})</TabsTrigger>
+        <TabsTrigger value="testing">Тестирование</TabsTrigger>
+        <TabsTrigger value="unanswered">Без ответа{open ? ` (${open})` : ""}</TabsTrigger>
+        <TabsTrigger value="settings">Настройки</TabsTrigger>
       </TabsList>
       <TabsContent value="general" className="mt-4">
         <GeneralForm slug={slug} agent={agent} />
