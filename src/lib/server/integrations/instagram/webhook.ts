@@ -6,6 +6,7 @@ import { getDb } from "@/lib/server/db/client";
 import { channelConnections, webhookReceipts } from "@/lib/server/db/schema";
 import { enqueueJob } from "@/lib/server/jobs/queue";
 import { webhookSigningSecrets } from "./config";
+import { parseJsonKeepingIds } from "./api";
 import { normalizePayload, webhookPayloadSchema } from "./events";
 
 export type WebhookResponse = { status: number; body: string; contentType?: string };
@@ -52,7 +53,7 @@ type Outcome = "accepted" | "bad_signature" | "invalid_json" | "invalid_payload"
 /** Best-effort extraction of entry ids for diagnostics (never trusted for routing). */
 function claimedAccountIds(raw: string): string[] {
   try {
-    const j = JSON.parse(raw) as { entry?: { id?: unknown }[] };
+    const j = parseJsonKeepingIds(raw) as { entry?: { id?: unknown }[] };
     return [...new Set((j.entry ?? []).map((e) => String(e?.id ?? "")).filter(Boolean))].slice(0, 20);
   } catch {
     return [];
@@ -100,7 +101,7 @@ export async function receiveWebhook(rawBody: string, signatureHeader: string | 
   }
   let json: unknown;
   try {
-    json = JSON.parse(rawBody);
+    json = parseJsonKeepingIds(rawBody);
   } catch {
     return respond(400, "Invalid JSON", "invalid_json");
   }

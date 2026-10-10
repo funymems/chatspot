@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { AlertTriangle, CheckCircle2, CircleAlert, Copy, Loader2, Unplug } from "lucide-react";
+import { AlertTriangle, CheckCircle2, CircleAlert, Copy, Inbox, Loader2, Unplug } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -16,7 +16,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { RelativeTime } from "@/components/common/relative-time";
-import { disconnectInstagramAction, setInstagramAutoReplyAction, startInstagramConnectAction } from "@/app/actions/integrations";
+import { disconnectInstagramAction, pullInstagramMessagesAction, setInstagramAutoReplyAction, startInstagramConnectAction } from "@/app/actions/integrations";
 import { Switch } from "@/components/ui/switch";
 import { cn } from "@/lib/utils";
 
@@ -170,6 +170,22 @@ export function InstagramCard(p: InstagramCardProps) {
               {pending ? <Loader2 className="animate-spin" /> : <InstagramGlyph className="size-4" />}
               {c ? (needsReconnect ? "Reconnect Instagram" : "Reconnect / change account") : "Connect Instagram"}
             </Button>
+            {c && c.status === "active" && (
+              <Button
+                variant="outline"
+                disabled={pending}
+                title="Fetch recent DMs directly from Instagram — works even when webhooks aren't delivered (e.g. unpublished Meta app)"
+                onClick={() =>
+                  start(async () => {
+                    const res = await pullInstagramMessagesAction(p.slug);
+                    if (res.ok) toast.success(res.message);
+                    else toast.error(res.error);
+                  })
+                }
+              >
+                <Inbox /> Check for new DMs
+              </Button>
+            )}
             {c && (
               <Button variant="outline" onClick={() => setConfirm(true)} disabled={pending}>
                 <Unplug /> Disconnect

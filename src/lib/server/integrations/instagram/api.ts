@@ -17,6 +17,15 @@ export class InstagramApiError extends Error {
   }
 }
 
+/**
+ * JSON.parse that keeps large integer ids exact: Meta sometimes sends ids
+ * (e.g. the token exchange's user_id) as JSON numbers above 2^53, which
+ * would otherwise be silently rounded (…129 → …130).
+ */
+export function parseJsonKeepingIds(text: string): unknown {
+  return JSON.parse(text.replace(/("(?:[a-z_]*_)?id"\s*:\s*)(-?\d{16,})(?=\s*[,}\]])/g, '$1"$2"'));
+}
+
 async function call(url: string, init: RequestInit, label: string): Promise<unknown> {
   let res: Response;
   try {
@@ -27,7 +36,7 @@ async function call(url: string, init: RequestInit, label: string): Promise<unkn
   const text = await res.text();
   let body: unknown = null;
   try {
-    body = text ? JSON.parse(text) : null;
+    body = text ? parseJsonKeepingIds(text) : null;
   } catch {
     body = null;
   }
@@ -143,6 +152,59 @@ export async function sendInstagramMessage(token: string, recipientIgsid: string
   const parsed = z.object({ message_id: z.string() }).loose().safeParse(body);
   if (!parsed.success) throw new InstagramApiError("Send message returned an unexpected response", 502, "bad_response");
   return { messageId: parsed.data.message_id };
+}
+
+const conversationsSchema = z.object({
+  data: z.array(
+    z
+      .object({
+        id: z.string(),
+        messages: z
+          .object({
+            data: z.array(
+              z
+                .object({
+                  id: z.string(),
+                  created_time: z.string().optional(),
+                  message: z.string().optional(),
+                  from: z.object({ id: z.union([z.string(), z.number()]).transform(String), username: z.string().optional() }).loose().optional(),
+                })
+                .loose(),
+            ),
+          })
+          .loose()
+          .optional(),
+      })
+      .loose(),
+  ),
+});
+
+export type IgConversationMessage = { mid: string; senderId: string; senderUsername: string; text: string; createdAt: Date | null };
+
+/**
+ * Conversations API: recent messages of the account's DM threads, newest
+ * first. Works without webhooks (e.g. while the Meta app is unpublished).
+ */
+export async function listRecentMessages(token: string, perThread = 5): Promise<IgConversationMessage[][]> {
+  const url = `${IG_GRAPH_BASE}/${graphVersion()}/me/conversations?${new URLSearchParams({
+    platform: "instagram",
+    fields: `messages.limit(${perThread}){id,created_time,message,from}`,
+    limit: "20",
+    access_token: token,
+  })}`;
+  const parsed = conversationsSchema.safeParse(await call(url, { method: "GET" }, "Conversations lookup"));
+  if (!parsed.success) throw new InstagramApiError("Conversations lookup returned an unexpected response", 502, "bad_response");
+  return parsed.data.data.map((c) =>
+    (c.messages?.data ?? [])
+      .filter((m) => m.from?.id)
+      .map((m) => ({
+        mid: m.id,
+        senderId: m.from!.id,
+        senderUsername: m.from!.username ?? "",
+        text: m.message ?? "",
+        createdAt: m.created_time ? new Date(m.created_time) : null,
+      })),
+  );
 }
 
 /** User Profile API: available once the user has messaged the account. */
