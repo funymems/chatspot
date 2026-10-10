@@ -28,7 +28,8 @@ export function registerAiStep(fn: AiStepImpl) {
 }
 
 export async function runAiStep(p: AiStepParams): Promise<AiStepResult> {
+  if (!slot[key]) await import("@/lib/server/agents/engine-bridge"); // registers the agent runtime
   const impl = slot[key];
-  if (!impl) throw new Error("AI responses are not available yet — the agent runtime arrives in implementation stage 6");
+  if (!impl) throw new Error("AI agent runtime failed to load");
   return impl(p);
 }

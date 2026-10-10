@@ -200,3 +200,15 @@ Choice: **`claude-haiku-5-5`** through the official `@anthropic-ai/sdk`. It's at
 - Run history: "Recent runs" on the automation page, plus a run page with the node log (input, output, branch, timing), the simulated messages, variables, the result and Retry for failed runs.
 - Branding: a hand-drawn SVG logo and favicon (`src/app/icon.svg`) and custom duotone navigation icons.
 - **Open:** the builder's interactive test panel (chat simulator plus node status overlay on the canvas). The server actions and the `runStatus` support on canvas nodes are ready; the UI component isn't written yet.
+
+### Stage 6: done (2026-10-10)
+- **Provider switched to Google Gemini** at the user's request: `gemini-3.5-flash-lite` ($0.30 / $2.50 per 1M tokens, stable, Google's recommended cost-efficient 3.5 model, has a free tier) through `@google/genai`. It's configurable with `AI_MODEL`. Without `GEMINI_API_KEY` everything runs in a labelled, deterministic demo mode.
+- `src/lib/server/ai/provider.ts`: server-only `LLMProvider` with structured JSON output. 429/5xx and timeouts map to `RetryableError`, so the engine retries them.
+- Agents: CRUD, role presets, tone and language behaviour, instructions, business info, fallback, escalation rules (keywords, explicit request EN/RU, on no answer), enable/disable.
+- Knowledge base: text documents, Q&A, and .txt/.md/.csv uploads (≤ 1 MB) chunked into `knowledge_entries`. Retrieval uses Postgres FTS (`simple` config, OR of prefix terms, `ts_rank_cd`) and is workspace-scoped, with a "test retrieval" tool. pgvector + `gemini-embedding-2` is the upgrade path.
+- Agent runtime: escalation check, then retrieval, then a grounded JSON prompt (no invented facts; customer text treated as data), then fallback and an unanswered-question log when the answer isn't in the knowledge. Hand-off sets `needs_human` and creates an in-app notification.
+- The automation engine's AI step is implemented via `agents/engine-bridge.ts` (node instructions, context, fallback modes, reply sent through the channel).
+- Agent page tabs: General, Instructions, Knowledge Base, Testing (playground with sources, fallback and hand-off badges), Unanswered (answer it, which adds it to the knowledge base), Settings (with delete).
+- AI flow generator: strict response schema (configs as JSON strings), Zod parsing, deterministic repair (types, ids, edges, one trigger, End on open outputs, layout), validation and one LLM repair round. The preview is shown before saving, the server re-validates on save, and drafts are never activated. The demo generator is rule-based and handles EN/RU patterns.
+- Checks: 89 tests, tsc, ESLint and `next build` pass. Verified in the browser: create an agent, add a Q&A, get a grounded answer with its source, get the fallback plus an unanswered entry, generate a flow, save the draft and open it in the builder.
+- Not verified against the real Gemini API: no key was available. The Gemini path is covered by a mocked-provider test.

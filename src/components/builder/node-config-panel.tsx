@@ -20,7 +20,7 @@ import type { GraphIssue } from "@/lib/domain/graph/validate";
 import { nodeMeta } from "@/components/flow/node-meta";
 import { matchesTrigger } from "@/lib/domain/trigger-match";
 import { cn } from "@/lib/utils";
-import { defaultAction, defaultRule } from "./defaults";
+import { defaultAction, defaultRule } from "@/lib/domain/graph/defaults";
 import { newId } from "./state";
 import {
   DurationField,
@@ -500,7 +500,7 @@ function AiForm({ node, issues, onChange, agents }: Props) {
         options={agents.map((a) => ({ value: a.id, label: a.name }))}
         placeholder={agents.length ? "Choose an agent" : "No agents yet"}
         error={err("agentId") ?? issues.find((i) => i.nodeId === node.id && i.code === "agent_missing")?.message}
-        hint={agents.length ? undefined : "AI agents are created on the AI Agents page (stage 6)."}
+        hint={agents.length ? undefined : "Create an agent on the AI Agents page first."}
       />
       <TextAreaField label="Node-specific instructions" value={d.instructions} onChange={(instructions) => set({ instructions }, "instructions")} rows={3} placeholder="Keep it short and suggest the beginner course." />
       <TextAreaField label="Knowledge context" value={d.knowledgeContext} onChange={(knowledgeContext) => set({ knowledgeContext }, "knowledgeContext")} rows={2} hint="Extra context added to what the agent retrieves from its knowledge base." />

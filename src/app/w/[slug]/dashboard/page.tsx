@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
 import { PageContainer, PageHeader } from "@/components/shell/page-header";
 import { EmptyState } from "@/components/common/empty-state";
 import { RelativeTime } from "@/components/common/relative-time";
@@ -160,13 +161,15 @@ async function Dashboard({ params }: { params: Props["params"] }) {
                 <span className="block text-xs font-normal text-muted-foreground">{templates.length} ready-made flows</span>
               </span>
             </NewAutomationButton>
-            <div className="flex items-center gap-2 rounded-lg border border-dashed p-2.5 text-sm text-muted-foreground" aria-disabled>
-              <Bot className="size-4" aria-hidden />
-              <span>
-                <span className="block font-medium">Create an AI agent</span>
-                <span className="block text-xs">Available in implementation stage 6</span>
-              </span>
-            </div>
+            <Button asChild variant="outline" className="h-auto justify-start py-2.5">
+              <Link href={`/w/${slug}/agents`}>
+                <Bot className="text-primary" aria-hidden />
+                <span className="text-left">
+                  <span className="block font-medium">Create an AI agent</span>
+                  <span className="block text-xs font-normal text-muted-foreground">Answers from your knowledge base</span>
+                </span>
+              </Link>
+            </Button>
           </CardContent>
         </Card>
       </div>

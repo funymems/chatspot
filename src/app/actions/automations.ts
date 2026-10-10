@@ -17,15 +17,24 @@ import {
 import { createAutomationFromTemplate } from "@/lib/server/services/templates";
 import { automationDetailsSchema, createAutomationSchema, idSchema } from "@/lib/validation/automation";
 import { z } from "zod";
+import { AppError } from "@/lib/server/errors";
+import { validateGraph } from "@/lib/domain/graph/validate";
 
 export async function createAutomationAction(slug: string, input: unknown): Promise<ActionResult<{ id: string }>> {
   return runAction("automation.create", async () => {
     const ctx = await authorizeWorkspace(slug);
     const data = parseInput(createAutomationSchema, input);
-    const row =
-      data.mode === "scratch"
-        ? await createAutomation(ctx, { name: data.name, description: data.description, origin: "scratch" })
-        : await createAutomationFromTemplate(ctx, data.templateId, data.name);
+    let row;
+    if (data.mode === "scratch") {
+      row = await createAutomation(ctx, { name: data.name, description: data.description, origin: "scratch" });
+    } else if (data.mode === "template") {
+      row = await createAutomationFromTemplate(ctx, data.templateId, data.name);
+    } else {
+      // AI drafts come back from the client: re-validate on the server and never activate.
+      const v = validateGraph(data.graph);
+      if (!v.valid || !v.graph) throw new AppError("The generated flow is not valid. Generate it again or adjust the description.", "validation");
+      row = await createAutomation(ctx, { name: data.name, description: data.description, graph: v.graph, origin: "ai" });
+    }
     return { ok: true, data: { id: row.id }, message: `“${row.name}” created as a draft` };
   });
 }

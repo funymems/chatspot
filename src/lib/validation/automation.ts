@@ -11,6 +11,7 @@ export const automationDetailsSchema = z.object({
 export const createAutomationSchema = z.discriminatedUnion("mode", [
   z.object({ mode: z.literal("scratch"), name: automationNameSchema, description: automationDescriptionSchema }),
   z.object({ mode: z.literal("template"), templateId: z.uuid("Choose a template"), name: z.string().trim().max(120).default("") }),
+  z.object({ mode: z.literal("ai"), name: automationNameSchema, description: automationDescriptionSchema, graph: z.unknown() }),
 ]);
 export type CreateAutomationInput = z.input<typeof createAutomationSchema>;
 

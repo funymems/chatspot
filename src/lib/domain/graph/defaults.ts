@@ -1,4 +1,4 @@
-import type { ActionDef, ConditionRule, NodeType } from "@/lib/domain/graph/schema";
+import type { ActionDef, ConditionRule, NodeType } from "./schema";
 
 /** Starting configuration for a freshly added node of each type. */
 export function defaultNodeData(type: NodeType): Record<string, unknown> {

@@ -1,4 +1,3 @@
-import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function EmptyState({
@@ -9,7 +8,7 @@ export function EmptyState({
   className,
   compact,
 }: {
-  icon: LucideIcon;
+  icon: React.ComponentType<{ className?: string; "aria-hidden"?: boolean }>;
   title: string;
   description?: React.ReactNode;
   action?: React.ReactNode;

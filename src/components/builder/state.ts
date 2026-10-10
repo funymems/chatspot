@@ -1,5 +1,5 @@
 import type { AutomationGraph, GraphEdge, GraphNode, NodeType } from "@/lib/domain/graph/schema";
-import { defaultNodeData } from "./defaults";
+import { defaultNodeData } from "@/lib/domain/graph/defaults";
 
 /**
  * Builder state: the working graph plus undo/redo history. Pure reducer so it

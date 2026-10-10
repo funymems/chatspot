@@ -1,5 +1,5 @@
 import "server-only";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
 import { getDb } from "@/lib/server/db/client";
 import {
   automationExecutions,
@@ -40,7 +40,14 @@ export async function ensureTestConversation(ctx: WorkspaceContext) {
   let [conv] = await db
     .select()
     .from(conversations)
-    .where(and(eq(conversations.workspaceId, ctx.workspaceId), eq(conversations.contactId, contact!.id), eq(conversations.isTest, true)))
+    .where(
+      and(
+        eq(conversations.workspaceId, ctx.workspaceId),
+        eq(conversations.contactId, contact!.id),
+        eq(conversations.isTest, true),
+        isNull(conversations.agentId), // agent playgrounds have their own conversations
+      ),
+    )
     .limit(1);
   if (!conv) {
     [conv] = await db
