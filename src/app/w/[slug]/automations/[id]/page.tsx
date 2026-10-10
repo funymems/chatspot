@@ -13,6 +13,8 @@ import { RelativeTime } from "@/components/common/relative-time";
 import { requireWorkspace } from "@/lib/server/auth/guards";
 import { AppError } from "@/lib/server/errors";
 import { getAutomation, validateAutomation } from "@/lib/server/services/automations";
+import { listExecutions } from "@/lib/server/services/executions";
+import { RunStatusBadge } from "@/components/automations/run-status";
 import { nodeDisplayName } from "@/lib/domain/graph/validate";
 import { idSchema } from "@/lib/validation/automation";
 import { AutomationDetailsForm, AutomationHeaderActions } from "./automation-detail-client";
@@ -34,8 +36,8 @@ async function load(params: Props["params"]) {
   const ctx = await requireWorkspace(slug);
   if (!idSchema.safeParse(id).success) notFound();
   try {
-    const [automation, validation] = await Promise.all([getAutomation(ctx, id), validateAutomation(ctx, id)]);
-    return { slug, automation, validation };
+    const [automation, validation, runs] = await Promise.all([getAutomation(ctx, id), validateAutomation(ctx, id), listExecutions(ctx, id, 10)]);
+    return { slug, automation, validation, runs };
   } catch (err) {
     if (err instanceof AppError && err.code === "not_found") notFound();
     throw err;
@@ -43,7 +45,7 @@ async function load(params: Props["params"]) {
 }
 
 async function AutomationDetail({ params }: { params: Props["params"] }) {
-  const { slug, automation: a, validation } = await load(params);
+  const { slug, automation: a, validation, runs } = await load(params);
   const errors = validation.issues.filter((i) => i.severity === "error");
   const warnings = validation.issues.filter((i) => i.severity === "warning");
   const nodeName = (nodeId?: string) => {
@@ -131,6 +133,37 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
                 </ul>
               </CardContent>
             )}
+          </Card>
+          <Card>
+            <CardHeader>
+              <CardTitle>Recent runs</CardTitle>
+              <CardDescription>Test runs from the builder and live runs from incoming messages.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {runs.length === 0 ? (
+                <p className="text-sm text-muted-foreground">No runs yet.</p>
+              ) : (
+                <ul className="divide-y rounded-lg border">
+                  {runs.map((r) => (
+                    <li key={r.id}>
+                      <Link
+                        href={`/w/${slug}/automations/${a.id}/runs/${r.id}`}
+                        className="flex items-center gap-3 px-3 py-2.5 text-sm hover:bg-muted/50"
+                      >
+                        <RunStatusBadge status={r.status} />
+                        <span className="text-xs text-muted-foreground uppercase">{r.mode}</span>
+                        <span className="min-w-0 flex-1 truncate">
+                          {[r.contactFirst, r.contactLast].filter(Boolean).join(" ") || "No contact"}
+                          {r.error && <span className="ml-2 text-xs text-destructive">{r.error}</span>}
+                        </span>
+                        <span className="text-xs text-muted-foreground">v{r.version} · {r.stepCount} steps</span>
+                        <RelativeTime date={r.createdAt} className="w-24 text-right text-xs text-muted-foreground" />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </CardContent>
           </Card>
         </div>
 

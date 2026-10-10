@@ -190,3 +190,13 @@ Choice: **`claude-haiku-5-5`** through the official `@anthropic-ai/sdk`. It's at
 - Save (button or Ctrl+S) with optimistic-concurrency revisions, plus "Activate" / "Publish changes" (save, then publish). Unsaved-changes guard. Hotkeys: undo/redo/duplicate/delete/escape. Live validation popover; clicking an issue centres its node.
 - Node cards show the START badge, error count and a run-status ring (used by the stage 5 test runner).
 - Checks: 47 tests (builder reducer, trigger matcher and the earlier suites), tsc, ESLint. Verified in the browser: edit, live validation, undo, add node, save, persists after reload, delete edge, reconnect by drag.
+
+### Stage 5: engine done, builder test panel open (2026-10-10)
+- Engine: `src/lib/server/engine/*`. It walks a version-pinned graph with per-node logs, timeouts (5s, 25s for AI), a step limit, retries with exponential backoff (max 3), pause/resume through tokenised jobs (message delays, Wait action, wait-for-reply with optional timeout), redirects (depth ≤ 3), hand-off notifications, and live failure tracking (3 consecutive failures move the automation to `error`).
+- Idempotency: `inbound_events` unique key, per-execution lock (global), and stale resume tokens are ignored.
+- Jobs: `scheduled_jobs` claimed with `FOR UPDATE SKIP LOCKED`, stale locks reclaimed. `/api/jobs/tick` is protected by `JOB_TICK_SECRET` (set by the dev ticker in `instrumentation.ts`) or `CRON_SECRET` (prod cron). Disable the ticker with `JOB_WORKER=off`.
+- Channels: `ChannelProvider` interface (`sendMessage`, `receiveEvent`, `verifyWebhook`, `getCapabilities`) plus `MockChannelProvider`. Messages are stored with delivery status `simulated` only.
+- Test runs: per-user test contact and conversation, a draft snapshot pinned as a `test` version, and server actions in `src/app/actions/test-runs.ts` (send, session, reset, retry).
+- Run history: "Recent runs" on the automation page, plus a run page with the node log (input, output, branch, timing), the simulated messages, variables, the result and Retry for failed runs.
+- Branding: a hand-drawn SVG logo and favicon (`src/app/icon.svg`) and custom duotone navigation icons.
+- **Open:** the builder's interactive test panel (chat simulator plus node status overlay on the canvas). The server actions and the `runStatus` support on canvas nodes are ready; the UI component isn't written yet.

@@ -160,7 +160,7 @@ function NavLink({ item, slug, collapsed }: { item: NavItem; slug: string; colla
       )}
     >
       <Icon
-        className={cn("size-4 shrink-0", active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground")}
+        className={cn("size-[18px] shrink-0", active ? "text-sidebar-primary" : "text-sidebar-foreground/60 group-hover:text-sidebar-foreground")}
         aria-hidden
       />
       {!collapsed && <span className="truncate">{item.label}</span>}

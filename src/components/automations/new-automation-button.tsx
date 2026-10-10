@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
-import { Check, FilePlus2, LayoutTemplate, Plus, Sparkles } from "lucide-react";
+import { Check, FilePlus2, LayoutTemplate, PenLine, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import {
@@ -97,7 +97,7 @@ function CreateAutomationDialog({
   const modes: { id: Mode; label: string; icon: typeof Plus; hint: string; disabled?: boolean }[] = [
     { id: "scratch", label: "From scratch", icon: FilePlus2, hint: "Start with a simple starter flow" },
     { id: "template", label: "From template", icon: LayoutTemplate, hint: `${templates.length} ready-made flows` },
-    { id: "ai", label: "Generate with AI", icon: Sparkles, hint: "Arrives in stage 6", disabled: true },
+    { id: "ai", label: "Generate with AI", icon: PenLine, hint: "Arrives in stage 6", disabled: true },
   ];
 
   return (

@@ -7,8 +7,7 @@
 export async function register() {
   if (process.env.NEXT_RUNTIME !== "nodejs" || process.env.JOB_WORKER === "off") return;
   if (process.env.NEXT_PHASE === "phase-production-build") return;
-  const { randomBytes } = await import("node:crypto");
-  process.env.JOB_TICK_SECRET ??= randomBytes(24).toString("hex");
+  process.env.JOB_TICK_SECRET ??= Array.from(crypto.getRandomValues(new Uint8Array(24)), (b) => b.toString(16).padStart(2, "0")).join("");
   const port = process.env.PORT ?? "3000";
   const url = `http://127.0.0.1:${port}/api/jobs/tick`;
   let busy = false;
