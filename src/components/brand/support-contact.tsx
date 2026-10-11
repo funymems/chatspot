@@ -1,11 +1,11 @@
-/** Contact address from SUPPORT_EMAIL (set it in the deployment environment). */
+import { COMPANY } from "@/lib/company";
+
+/** Support address: SUPPORT_EMAIL if set in the environment, otherwise the public company email. */
 export function SupportContact() {
-  const email = process.env.SUPPORT_EMAIL?.trim();
-  return email ? (
+  const email = process.env.SUPPORT_EMAIL?.trim() || COMPANY.email;
+  return (
     <a href={`mailto:${email}`} className="font-medium text-primary hover:underline">
       {email}
     </a>
-  ) : (
-    <span className="font-medium">адрес поддержки, указанный в профиле разработчика приложения в Meta</span>
   );
 }

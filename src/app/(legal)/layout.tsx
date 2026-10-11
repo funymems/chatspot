@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
+import { SiteFooter } from "@/components/brand/site-footer";
 
 export default function LegalLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -9,7 +10,10 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           <Link href="/" aria-label="ChatSpot — главная">
             <Logo />
           </Link>
-          <nav className="flex gap-4 text-sm text-muted-foreground">
+          <nav className="flex gap-4 text-sm text-muted-foreground max-sm:gap-3 max-sm:text-xs">
+            <Link href="/contacts" className="hover:text-foreground">
+              Контакты
+            </Link>
             <Link href="/privacy" className="hover:text-foreground">
               Конфиденциальность
             </Link>
@@ -24,6 +28,7 @@ export default function LegalLayout({ children }: { children: React.ReactNode })
           {children}
         </article>
       </main>
+      <SiteFooter />
     </div>
   );
 }
