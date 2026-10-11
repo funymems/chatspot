@@ -43,7 +43,9 @@ async function SettingsContent({
   const canEdit = hasRole(ctx.role, "admin");
   const errorReason = typeof sp.instagram_error === "string" ? (sp.instagram_error as keyof typeof oauthErrorMessages) : null;
   const flash =
-    sp.instagram === "connected"
+    sp.tiktok === "soon"
+      ? { kind: "warning" as const, text: "Подключение TikTok скоро будет доступно — сейчас интеграция ожидает одобрения со стороны TikTok." }
+      : sp.instagram === "connected"
       ? sp.instagram_warning === "webhook"
         ? { kind: "warning" as const, text: "Instagram подключён, но Meta не подтвердила подписку на вебхуки. Проверьте, что приложение опубликовано и вебхуки настроены, затем переподключите аккаунт." }
         : { kind: "success" as const, text: "Instagram подключён." }
