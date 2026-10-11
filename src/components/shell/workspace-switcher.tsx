@@ -25,6 +25,7 @@ import { Input } from "@/components/ui/input";
 import { Field, fieldA11y } from "@/components/forms/field";
 import { createWorkspaceAction } from "@/app/actions/workspaces";
 import { cn } from "@/lib/utils";
+import { roleLabels, sidebarLabel } from "./sidebar-fade";
 
 export type ShellWorkspace = { id: string; name: string; slug: string; role: string; isDemo: boolean };
 
@@ -54,21 +55,18 @@ export function WorkspaceSwitcher({
         <DropdownMenuTrigger asChild>
           <button
             className={cn(
-              "flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-sm outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-              collapsed && "justify-center",
+              "flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring",
             )}
             aria-label={`Текущее рабочее пространство: ${current.name}. Сменить`}
           >
             <Initial name={current.name} />
-            {!collapsed && (
-              <>
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate font-medium text-sidebar-accent-foreground">{current.name}</span>
-                  <span className="block text-xs capitalize text-sidebar-foreground/60">{current.role}</span>
-                </span>
-                <ChevronsUpDown className="size-4 text-sidebar-foreground/50" aria-hidden />
-              </>
-            )}
+            <span className={sidebarLabel(collapsed, "flex flex-1 items-center gap-2")}>
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-medium text-sidebar-accent-foreground">{current.name}</span>
+                <span className="block text-xs text-sidebar-foreground/60">{roleLabels[current.role] ?? current.role}</span>
+              </span>
+              <ChevronsUpDown className="size-4 shrink-0 text-sidebar-foreground/50" aria-hidden />
+            </span>
           </button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="start" className="w-64">
@@ -76,7 +74,7 @@ export function WorkspaceSwitcher({
           {workspaces.map((ws) => (
             <DropdownMenuItem key={ws.id} onSelect={() => router.push(`/w/${ws.slug}/dashboard`)}>
               <span className="truncate">{ws.name}</span>
-              {ws.isDemo && <span className="ml-1 text-xs text-muted-foreground">(demo)</span>}
+              {ws.isDemo && <span className="ml-1 text-xs text-muted-foreground">(демо)</span>}
               {ws.id === current.id && <Check className="ml-auto" aria-label="Текущее" />}
             </DropdownMenuItem>
           ))}

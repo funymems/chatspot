@@ -88,7 +88,7 @@ async function AutomationDetail({ params }: { params: Props["params"] }) {
                 </Button>
               </CardAction>
               <CardDescription>
-                {a.graph.nodes.length} nodes · {a.graph.edges.length} connections
+                блоков: {a.graph.nodes.length} · связей: {a.graph.edges.length}
               </CardDescription>
             </CardHeader>
             <CardContent>

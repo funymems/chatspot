@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { signOutAction } from "@/app/(auth)/actions";
 import { cn } from "@/lib/utils";
+import { sidebarLabel } from "./sidebar-fade";
 
 export type ShellUser = { fullName: string; email: string };
 
@@ -30,23 +31,20 @@ export function UserMenu({ user, slug, collapsed }: { user: ShellUser; slug: str
       <DropdownMenuTrigger asChild>
         <button
           className={cn(
-            "flex w-full items-center gap-2 rounded-lg p-1.5 text-left text-sm outline-none hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring",
-            collapsed && "justify-center",
+            "flex w-full items-center gap-2 rounded-lg px-3 py-1.5 text-left text-sm outline-none transition-colors hover:bg-sidebar-accent focus-visible:ring-2 focus-visible:ring-sidebar-ring",
           )}
           aria-label="Меню аккаунта"
         >
           <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-sidebar-accent text-xs font-semibold text-sidebar-accent-foreground">
             {initials(user.fullName, user.email[0]?.toUpperCase())}
           </span>
-          {!collapsed && (
-            <>
-              <span className="min-w-0 flex-1">
-                <span className="block truncate font-medium text-sidebar-accent-foreground">{user.fullName || "Аккаунт"}</span>
-                <span className="block truncate text-xs text-sidebar-foreground/60">{user.email}</span>
-              </span>
-              <ChevronsUpDown className="size-4 text-sidebar-foreground/50" aria-hidden />
-            </>
-          )}
+          <span className={sidebarLabel(collapsed, "flex flex-1 items-center gap-2")}>
+            <span className="min-w-0 flex-1">
+              <span className="block truncate font-medium text-sidebar-accent-foreground">{user.fullName || "Аккаунт"}</span>
+              <span className="block truncate text-xs text-sidebar-foreground/60">{user.email}</span>
+            </span>
+            <ChevronsUpDown className="size-4 shrink-0 text-sidebar-foreground/50" aria-hidden />
+          </span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent side="top" align="start" className="w-60">

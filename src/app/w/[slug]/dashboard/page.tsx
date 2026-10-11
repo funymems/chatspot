@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { plural } from "@/lib/domain/labels";
 import Link from "next/link";
 import { Suspense } from "react";
 import {
@@ -125,7 +126,7 @@ async function Dashboard({ params }: { params: Props["params"] }) {
                       </div>
                       <AutomationStatusBadge status={a.status} />
                       <div className="w-24 text-right text-xs tabular-nums text-muted-foreground">
-                        <span className="block text-sm font-medium text-foreground">{a.runs} runs</span>
+                        <span className="block text-sm font-medium text-foreground">{a.runs} {plural(a.runs, ["запуск", "запуска", "запусков"])}</span>
                         {rate !== null ? `${rate}% успешно` : "нет запусков"}
                       </div>
                     </li>
